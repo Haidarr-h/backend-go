@@ -1,0 +1,19 @@
+# Binaries
+/bin/
+/build/
+*.exe
+*.out
+*.test
+
+# Coverage & profiling
+*.cover
+*.prof
+
+# IDE / OS junk
+.vscode/
+.idea/
+.DS_Store
+
+# Env files
+.env
+.env.*
