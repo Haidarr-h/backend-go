@@ -3,12 +3,15 @@ package main
 import (
 	"fmt"
 
+	"github.com/Haidarr-h/backend-go/controllers"
 	"github.com/Haidarr-h/backend-go/initializers"
 	"github.com/gin-gonic/gin"
 )
 
 func init() {
 	initializers.LoadEnvVariables()
+	initializers.ConnectToDB()
+	initializers.SyncDatabase()
 }
 
 func main() {
@@ -16,11 +19,13 @@ func main() {
 
 	r := gin.Default()
 
-	r.GET("/ping", func (c *gin.Context) {
+	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
 		})
 	})
+
+	r.POST("/signup", controllers.Signup)
 
 	r.Run()
 }

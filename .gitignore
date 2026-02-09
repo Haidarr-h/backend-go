@@ -17,3 +17,6 @@
 # Env files
 .env
 .env.*
+
+# builded
+backend-go
