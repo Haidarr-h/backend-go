@@ -30,14 +30,18 @@ jobs:
       - name: Install OpenAPI to Postman converter
         run: npm install -g openapi-to-postmanv2
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Convert Swagger to Postman Collection
         run: |
-          openapi2postmanv2 -s docs/swagger.json -o postman.json -p
+          openapi2postmanv2 -s docs/swagger.json -o postman-output.json -p
+          cat postman-output.json
+          jq '.output[0].data' postman-output.json > postman.json
           ls -la
 
       - name: Update Postman Collection
         run: |
-          echo "UID: ${{ secrets.POSTMAN_COLLECTION_UID }}"
           curl -X PUT "https://api.getpostman.com/collections/${{ secrets.POSTMAN_COLLECTION_UID }}" \
             -H "X-Api-Key: ${{ secrets.POSTMAN_API_KEY }}" \
             -H "Content-Type: application/json" \
