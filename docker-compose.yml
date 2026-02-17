@@ -1,9 +1,11 @@
+version: "3.9"
+
 services:
   app:
-    build: .
+    image: ghcr.io/haidarr-h/backend-go:latest
     container_name: backend-go
+    restart: always
     ports:
       - "8080:8080"
     env_file:
       - .env
-    restart: always
