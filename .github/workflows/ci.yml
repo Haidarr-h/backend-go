@@ -21,8 +21,25 @@ jobs:
         with:
           go-version: "1.22"
 
-      - name: Run tests
-        run: go test ./...
+      - name: Install swag
+        run: go install github.com/swaggo/swag/cmd/swag@latest
+
+      - name: Generate Swagger
+        run: swag init
+
+      - name: Install OpenAPI to Postman converter
+        run: npm install -g openapi-to-postmanv2
+
+      - name: Convert Swagger to Postman Collection
+        run: |
+          openapi2postmanv2 -s docs/swagger.json -o postman.json -p
+
+      - name: Update Postman Collection
+        run: |
+          curl -X PUT "https://api.getpostman.com/collections/${{ secrets.POSTMAN_COLLECTION_UID }}" \
+            -H "X-Api-Key: ${{ secrets.POSTMAN_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d @postman.json
 
       - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
