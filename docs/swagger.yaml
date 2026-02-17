@@ -1,4 +1,9 @@
+basePath: /
+host: localhost:8080
 info:
   contact: {}
+  description: My backend API built with Go and Gin
+  title: Backend Go API
+  version: "1.0"
 paths: {}
 swagger: "2.0"
