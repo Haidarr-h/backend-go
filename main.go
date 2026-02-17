@@ -15,7 +15,7 @@ import (
 // @version         1.0
 // @description     My backend API built with Go and Gin
 
-// @host      localhost:8080
+// @host      103.150.100.6:8080
 // @BasePath  /
 
 func init() {
