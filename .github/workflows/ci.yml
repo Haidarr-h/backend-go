@@ -32,16 +32,49 @@ jobs:
 
       - name: Convert Swagger to Postman Collection
         run: |
-          openapi2postmanv2 -s docs/swagger.json -o postman.json -p
-          ls -la
+          openapi2postmanv2 -s docs/swagger.json -o postman_raw.json -p
+
+          # Verify conversion succeeded
+          if [ ! -f postman_raw.json ]; then
+            echo "ERROR: postman_raw.json was not created"
+            exit 1
+          fi
+
+          echo "Raw output preview:"
+          head -c 200 postman_raw.json
+
+          # Postman PUT API expects: { "collection": { ... } }
+          # openapi2postmanv2 outputs the collection object directly
+          node -e "
+            const raw = require('./postman_raw.json');
+            const collection = raw.collection ? raw : { collection: raw };
+            require('fs').writeFileSync('postman.json', JSON.stringify(collection, null, 2));
+          "
+
+          echo "Final postman.json preview:"
+          head -c 200 postman.json
+          ls -la postman.json
 
       - name: Update Postman Collection
         run: |
           echo "UID: ${{ secrets.POSTMAN_COLLECTION_UID }}"
-          curl -X PUT "https://api.getpostman.com/collections/${{ secrets.POSTMAN_COLLECTION_UID }}" \
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT \
+            "https://api.getpostman.com/collections/${{ secrets.POSTMAN_COLLECTION_UID }}" \
             -H "X-Api-Key: ${{ secrets.POSTMAN_API_KEY }}" \
             -H "Content-Type: application/json" \
-            --data-binary @postman.json
+            --data-binary @postman.json)
+
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+
+          echo "Response: $BODY"
+          echo "HTTP Status: $HTTP_STATUS"
+
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "ERROR: Postman update failed with status $HTTP_STATUS"
+            exit 1
+          fi
 
       - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
