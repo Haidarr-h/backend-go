@@ -12,6 +12,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Signup godoc
+// @Summary      Register a new user
+// @Description  Create a new user account with email and password
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      AuthRequest    true  "Signup credentials"
+// @Success      200   {object}  map[string]interface{}
+// @Failure      400   {object}  ErrorResponse
+// @Router       /signup [post]
 func Signup(c *gin.Context) {
 	// get the email and pass from body request
 	var body struct {
@@ -52,6 +62,16 @@ func Signup(c *gin.Context) {
 
 }
 
+// Login godoc
+// @Summary      Login a user
+// @Description  Authenticate user and return a JWT token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      AuthRequest   true  "Login credentials"
+// @Success      200   {object}  AuthResponse
+// @Failure      400   {object}  ErrorResponse
+// @Router       /signin [post]
 func Login(c *gin.Context) {
 	// get the email and pass from the body
 	var body struct {
