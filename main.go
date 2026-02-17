@@ -25,6 +25,12 @@ func main() {
 		})
 	})
 
+	r.GET("/pingping", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "pong this is new",
+		})
+	})
+
 	r.POST("/signup", controllers.Signup)
 	r.POST("/signin", controllers.Login)
 
