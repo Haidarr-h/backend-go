@@ -15,7 +15,7 @@ import (
 // @version         1.0
 // @description     My backend API built with Go and Gin
 
-// @host      103.150.100.6:8080
+// @host      https://api-staging.liftlogs.my.id
 // @BasePath  /
 
 func init() {
