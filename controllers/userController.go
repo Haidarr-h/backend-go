@@ -37,33 +37,44 @@ type ErrorResponse struct {
 // @Router       /signup [post]
 func Signup(c *gin.Context) {
 	var body struct {
-		Email    string
-		Password string
+		Email    string `json:"email" binding:"required,email"`
+		Password string `json:"password" binding:"required,min=8,max=24"`
+		Username string `json:"username" binding:"required,min=3,max=24"`
+		FullName string `json:"fullName" binding:"required,min=3,max=24"`
 	}
 
-	if c.Bind(&body) != nil {
+	// read the request body
+	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to read body",
+			"error": "Failed to read request body",
+			"detail": err.Error(),
 		})
 		return
 	}
 
+	// validate the request body data
+
+	// hash the password
 	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to hash password",
 		})
+		return
 	}
 
-	user := models.User{Email: body.Email, Password: string(hash)}
+	// create user data
+	user := models.User{Email: body.Email, Password: string(hash), FullName: body.FullName, Username: body.Username}
 	result := initializers.DB.Create(&user)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to create user",
+			"detail": result.Error,
 		})
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{})
+	c.JSON(http.StatusCreated, gin.H{})
 }
 
 // Login godoc
@@ -93,7 +104,7 @@ func Login(c *gin.Context) {
 	initializers.DB.First(&user, "email = ? ", body.Email)
 
 	if user.ID == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Invalid Email or Password",
 		})
 		return
@@ -101,8 +112,8 @@ func Login(c *gin.Context) {
 
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid Password",
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Invalid Email or Password",
 		})
 		return
 	}
