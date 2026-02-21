@@ -46,13 +46,11 @@ func Signup(c *gin.Context) {
 	// read the request body
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to read request body",
+			"error":  "Failed to read request body",
 			"detail": err.Error(),
 		})
 		return
 	}
-
-	// validate the request body data
 
 	// hash the password
 	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
@@ -63,12 +61,35 @@ func Signup(c *gin.Context) {
 		return
 	}
 
-	// create user data
+	// create user model
 	user := models.User{Email: body.Email, Password: string(hash), FullName: body.FullName, Username: body.Username}
+
+	// check if email already exist
+	errorEmail := initializers.DB.Where("email = ?", body.Email).First(&user).Error
+
+	if errorEmail == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  "Failed. Email already exist",
+			"detail": errorEmail,
+		})
+		return
+	}
+	// check if username already exist
+	errorUsername := initializers.DB.Where("username = ?", body.Username).First(&user).Error
+
+	if errorUsername == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  "Failed. Username already exist",
+			"detail": errorUsername,
+		})
+		return
+	}
+
+	// create the user data to database
 	result := initializers.DB.Create(&user)
 	if result.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to create user",
+			"error":  "Failed to create user",
 			"detail": result.Error,
 		})
 		return
