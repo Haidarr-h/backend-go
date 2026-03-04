@@ -27,43 +27,24 @@ jobs:
       - name: Generate Swagger
         run: swag init
 
-      - name: Install OpenAPI to Postman converter
-        run: npm install -g openapi-to-postmanv2
-
-      - name: Convert Swagger to Postman Collection
+      - name: Update Apidog Collection
         run: |
-          openapi2postmanv2 -s docs/swagger.json -o postman_raw.json -p
-
-          # Verify conversion succeeded
-          if [ ! -f postman_raw.json ]; then
-            echo "ERROR: postman_raw.json was not created"
-            exit 1
-          fi
-
-          echo "Raw output preview:"
-          head -c 200 postman_raw.json
-
-          # Postman PUT API expects: { "collection": { ... } }
-          # openapi2postmanv2 outputs the collection object directly
-          node -e "
-            const raw = require('./postman_raw.json');
-            const collection = raw.collection ? raw : { collection: raw };
-            require('fs').writeFileSync('postman.json', JSON.stringify(collection, null, 2));
-          "
-
-          echo "Final postman.json preview:"
-          head -c 200 postman.json
-          ls -la postman.json
-
-      - name: Update Postman Collection
-        run: |
-          echo "UID: ${{ secrets.POSTMAN_COLLECTION_UID }}"
-
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT \
-            "https://api.getpostman.com/collections/${{ secrets.POSTMAN_COLLECTION_UID }}" \
-            -H "X-Api-Key: ${{ secrets.POSTMAN_API_KEY }}" \
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://api.apidog.com/v1/projects/${{ secrets.APIDOG_PROJECT_ID }}/import-openapi?locale=en-US" \
+            -H "X-Apidog-Api-Version: 2024-03-28" \
+            -H "Authorization: Bearer ${{ secrets.APIDOG_ACCESS_TOKEN }}" \
             -H "Content-Type: application/json" \
-            --data-binary @postman.json)
+            -d '{
+              "input": {
+                "url": "https://raw.githubusercontent.com/${{ github.repository }}/main/docs/swagger.json"
+              },
+              "options": {
+                "endpointOverwriteBehavior": "OVERWRITE_EXISTING",
+                "schemaOverwriteBehavior": "OVERWRITE_EXISTING",
+                "updateFolderOfChangedEndpoint": false,
+                "prependBasePath": false
+              }
+            }')
 
           HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | head -n-1)
@@ -72,7 +53,7 @@ jobs:
           echo "HTTP Status: $HTTP_STATUS"
 
           if [ "$HTTP_STATUS" != "200" ]; then
-            echo "ERROR: Postman update failed with status $HTTP_STATUS"
+            echo "ERROR: Apidog update failed with status $HTTP_STATUS"
             exit 1
           fi
 
