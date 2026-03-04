@@ -1,9 +1,91 @@
 basePath: /
-host: localhost:8080
+definitions:
+  controllers.AuthRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    type: object
+  controllers.AuthResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  controllers.ErrorResponse:
+    properties:
+      error:
+        example: Invalid Email or Password
+        type: string
+    type: object
+host: api-staging.liftlogs.my.id
 info:
   contact: {}
   description: My backend API built with Go and Gin
   title: Backend Go API
   version: "1.0"
-paths: {}
+paths:
+  /healthCheck:
+    get:
+      description: Perform status check to the server
+      responses: {}
+      summary: Check server status
+  /signin:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return a JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      summary: Login a user
+      tags:
+      - auth
+  /signup:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account with email and password
+      parameters:
+      - description: Signup credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controllers.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - auth
+schemes:
+- https
 swagger: "2.0"
