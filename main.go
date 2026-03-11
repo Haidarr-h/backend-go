@@ -41,7 +41,7 @@ func main() {
 	})
 
 	r.GET("/healthCheck", controllers.HealthCheck)
-	r.POST("/signup", controllers.Signup)
+	r.POST("/signupp", controllers.Signup)
 	r.POST("/signin", controllers.Login)
 
 	r.Run()
