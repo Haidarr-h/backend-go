@@ -34,7 +34,7 @@ type ErrorResponse struct {
 // @Param        body  body      AuthRequest    true  "Signup credentials"
 // @Success      200   {object}  map[string]interface{}
 // @Failure      400   {object}  ErrorResponse
-// @Router       /signup [post]
+// @Router       /signupp [post]
 func Signup(c *gin.Context) {
 	var body struct {
 		Email    string `json:"email" binding:"required,email"`
