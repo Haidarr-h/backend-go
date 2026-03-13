@@ -84,8 +84,8 @@
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -120,7 +120,7 @@
             "properties": {
                 "token": {
                     "type": "string",
-                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    "example": "xxxxxxxxxxxxxxx..."
                 }
             }
         },
@@ -162,7 +162,7 @@
                     "type": "string",
                     "maxLength": 24,
                     "minLength": 3,
-                    "example": "haidar11"
+                    "example": "haidarsebastian99"
                 }
             }
         }

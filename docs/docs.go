@@ -87,8 +87,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -123,7 +123,7 @@ const docTemplate = `{
             "properties": {
                 "token": {
                     "type": "string",
-                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    "example": "xxxxxxxxxxxxxxx..."
                 }
             }
         },
@@ -165,7 +165,7 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 24,
                     "minLength": 3,
-                    "example": "haidar11"
+                    "example": "haidarsebastian99"
                 }
             }
         }

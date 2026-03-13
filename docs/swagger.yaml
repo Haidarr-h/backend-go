@@ -12,7 +12,7 @@ definitions:
   controllers.AuthResponse:
     properties:
       token:
-        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        example: xxxxxxxxxxxxxxx...
         type: string
     type: object
   controllers.ErrorResponse:
@@ -37,7 +37,7 @@ definitions:
         minLength: 8
         type: string
       username:
-        example: haidar11
+        example: haidarsebastian99
         maxLength: 24
         minLength: 3
         type: string
@@ -100,8 +100,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
             additionalProperties: true
             type: object
