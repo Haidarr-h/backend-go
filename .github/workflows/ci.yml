@@ -29,6 +29,15 @@ jobs:
 
       - name: Install jq
         run: sudo apt-get install -y jq
+      
+      - name: Debug Swagger JSON
+        run: |
+          echo "=== swagger.json exists? ==="
+          ls -la docs/swagger.json
+          echo "=== swagger.json content ==="
+          cat docs/swagger.json
+          echo "=== jq parse test ==="
+          cat docs/swagger.json | jq -c . | head -c 200
 
       - name: Update Apidog Collection
         run: |
