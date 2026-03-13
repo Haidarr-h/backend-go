@@ -21,16 +21,11 @@ jobs:
         with:
           go-version: "1.22"
 
-      - name: Debug Swagger JSON
-        run: |
-          echo "=== swagger.json exists? ==="
-          ls -la docs/swagger.json
-          echo "=== swagger.json content ==="
-          cat docs/swagger.json
-          echo "=== jq parse test ==="
-          cat docs/swagger.json | jq -c . | head -c 200
+      - name: Install swag
+        run: go install github.com/swaggo/swag/cmd/swag@latest
 
-      
+      - name: Generate Swagger
+        run: swag init
 
       - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
