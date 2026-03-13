@@ -33,7 +33,7 @@ jobs:
       - name: Update Apidog Collection
         run: |
           jq -n --argjson content "$(cat docs/swagger.json | jq -c .)" \
-            '{input: {content: $content}, options: {endpointOverwriteBehavior: "OVERWRITE_EXISTING", schemaOverwriteBehavior: "OVERWRITE_EXISTING", updateFolderOfChangedEndpoint: false, prependBasePath: false}}' \
+            '{input: {content: $content}, options: {endpointOverwriteBehavior: "ALWAYS_OVERWRITE", schemaOverwriteBehavior: "OVERWRITE_EXISTING", updateFolderOfChangedEndpoint: false, prependBasePath: false}}' \
             > apidog_payload.json
 
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
