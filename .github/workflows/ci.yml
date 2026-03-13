@@ -29,8 +29,10 @@ jobs:
 
       - name: Verify Swagger output   # ← add this
         run: |
-          echo "=== signup ref ==="
-          cat docs/swagger.json | grep -A5 "Signup credentials"
+          echo "=== swagger.json signup ref ==="
+          cat docs/swagger.json | grep -A2 "Signup credentials"
+          echo "=== docs.go signup ref ==="
+          cat docs/docs.go | grep -A2 "Signup credentials"
 
       - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
