@@ -39,7 +39,7 @@ type ErrorResponse struct {
 // @Accept       json
 // @Produce      json
 // @Param        body  body      SignupRequest    true  "Signup credentials"
-// @Success      200   {object}  map[string]interface{}
+// @Success      201   {object}  map[string]interface{}
 // @Failure      400   {object}  ErrorResponse
 // @Router       /signup [post]
 func Signup(c *gin.Context) {
@@ -100,7 +100,9 @@ func Signup(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{})
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "User created successfully",
+	})
 }
 
 // Login godoc
