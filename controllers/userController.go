@@ -20,7 +20,7 @@ type AuthRequest struct {
 type SignupRequest struct {
 	Email    string `json:"email" binding:"required,email" example:"haidarGaming69@example.com"`
 	Password string `json:"password" binding:"required,min=8,max=24" example:"haidarGaming123"`
-	Username string `json:"username" binding:"required,min=3,max=24" example:"haidar11"`
+	Username string `json:"username" binding:"required,min=3,max=24" example:"haidarsebastian99"`
 	FullName string `json:"fullName" binding:"required,min=3,max=24" example:"Haidar Maximus Sebastian"`
 }
 
