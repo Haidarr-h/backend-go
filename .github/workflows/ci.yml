@@ -41,16 +41,22 @@ jobs:
 
       - name: Update Apidog Collection
         run: |
-          jq -n --argjson content "$(cat docs/swagger.json | jq -c .)" \
-            '{input: {content: $content}, options: {endpointOverwriteBehavior: "OVERWRITE_EXISTING", schemaOverwriteBehavior: "OVERWRITE_EXISTING", updateFolderOfChangedEndpoint: false, prependBasePath: false}}' \
-            > apidog_payload.json
-
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
             "https://api.apidog.com/v1/projects/${{ secrets.APIDOG_PROJECT_ID }}/import-openapi?locale=en-US" \
             -H "X-Apidog-Api-Version: 2024-03-28" \
             -H "Authorization: Bearer ${{ secrets.APIDOG_ACCESS_TOKEN }}" \
             -H "Content-Type: application/json" \
-            --data-binary @apidog_payload.json)
+            -d '{
+              "input": {
+                "url": "https://api-staging.liftlogs.my.id/swagger/doc.json"
+              },
+              "options": {
+                "endpointOverwriteBehavior": "OVERWRITE_EXISTING",
+                "schemaOverwriteBehavior": "OVERWRITE_EXISTING",
+                "updateFolderOfChangedEndpoint": false,
+                "prependBasePath": false
+              }
+            }')
 
           HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | head -n-1)
