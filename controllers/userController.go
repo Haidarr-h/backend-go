@@ -38,7 +38,7 @@ type ErrorResponse struct {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        body  body      AuthRequest    true  "Signup credentials"
+// @Param        body  body      SignupRequest    true  "Signup credentials"
 // @Success      200   {object}  map[string]interface{}
 // @Failure      400   {object}  ErrorResponse
 // @Router       /signup [post]

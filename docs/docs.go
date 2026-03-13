@@ -82,7 +82,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.AuthRequest"
+                            "$ref": "#/definitions/controllers.SignupRequest"
                         }
                     }
                 ],
@@ -133,6 +133,39 @@ const docTemplate = `{
                 "error": {
                     "type": "string",
                     "example": "Invalid Email or Password"
+                }
+            }
+        },
+        "controllers.SignupRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "fullName",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "haidarGaming69@example.com"
+                },
+                "fullName": {
+                    "type": "string",
+                    "maxLength": 24,
+                    "minLength": 3,
+                    "example": "Haidar Maximus Sebastian"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 24,
+                    "minLength": 8,
+                    "example": "haidarGaming123"
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 24,
+                    "minLength": 3,
+                    "example": "haidar11"
                 }
             }
         }
