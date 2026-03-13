@@ -25,7 +25,7 @@ type SignupRequest struct {
 }
 
 type AuthResponse struct {
-	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	Token string `json:"token" example:"xxxxxxxxxxxxxxx..."`
 }
 
 type ErrorResponse struct {
