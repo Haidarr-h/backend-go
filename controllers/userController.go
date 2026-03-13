@@ -13,8 +13,15 @@ import (
 )
 
 type AuthRequest struct {
-	Email    string `json:"email" example:"user@example.com"`
-	Password string `json:"password" example:"password123"`
+	Email    string `json:"email" example:"haidarGaming69@gmail.com"`
+	Password string `json:"password" example:"haidarGaming123"`
+}
+
+type SignupRequest struct {
+	Email    string `json:"email" binding:"required,email" example:"haidarGaming69@example.com"`
+	Password string `json:"password" binding:"required,min=8,max=24" example:"haidarGaming123"`
+	Username string `json:"username" binding:"required,min=3,max=24" example:"haidar11"`
+	FullName string `json:"fullName" binding:"required,min=3,max=24" example:"Haidar Maximus Sebastian"`
 }
 
 type AuthResponse struct {
@@ -34,20 +41,39 @@ type ErrorResponse struct {
 // @Param        body  body      AuthRequest    true  "Signup credentials"
 // @Success      200   {object}  map[string]interface{}
 // @Failure      400   {object}  ErrorResponse
-// @Router       /signupp [post]
+// @Router       /signup [post]
 func Signup(c *gin.Context) {
-	var body struct {
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required,min=8,max=24"`
-		Username string `json:"username" binding:"required,min=3,max=24"`
-		FullName string `json:"fullName" binding:"required,min=3,max=24"`
-	}
+	var body SignupRequest
 
 	// read the request body
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":  "Failed to read request body",
 			"detail": err.Error(),
+		})
+		return
+	}
+
+	// check if email already exist
+	var existingEmail models.User
+	errorEmail := initializers.DB.Where("email = ?", body.Email).First(&existingEmail).Error
+
+	if errorEmail == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  "Failed. Email already exist",
+			"detail": errorEmail,
+		})
+		return
+	}
+
+	// check if username already exist
+	var existingUsername models.User
+	errorUsername := initializers.DB.Where("username = ?", body.Username).First(&existingUsername).Error
+
+	if errorUsername == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  "Failed. Username already exist",
+			"detail": errorUsername,
 		})
 		return
 	}
@@ -63,27 +89,6 @@ func Signup(c *gin.Context) {
 
 	// create user model
 	user := models.User{Email: body.Email, Password: string(hash), FullName: body.FullName, Username: body.Username}
-
-	// check if email already exist
-	errorEmail := initializers.DB.Where("email = ?", body.Email).First(&user).Error
-
-	if errorEmail == nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":  "Failed. Email already exist",
-			"detail": errorEmail,
-		})
-		return
-	}
-	// check if username already exist
-	errorUsername := initializers.DB.Where("username = ?", body.Username).First(&user).Error
-
-	if errorUsername == nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":  "Failed. Username already exist",
-			"detail": errorUsername,
-		})
-		return
-	}
 
 	// create the user data to database
 	result := initializers.DB.Create(&user)
@@ -109,18 +114,17 @@ func Signup(c *gin.Context) {
 // @Failure      400   {object}  ErrorResponse
 // @Router       /signin [post]
 func Login(c *gin.Context) {
-	var body struct {
-		Email    string
-		Password string
-	}
+	var body AuthRequest
 
-	if c.Bind(&body) != nil {
+	// read the content type to decides how to parse the body
+	if c.ShouldBindJSON(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to read body",
 		})
 		return
 	}
 
+	// check if user exist
 	var user models.User
 	initializers.DB.First(&user, "email = ? ", body.Email)
 
@@ -139,6 +143,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// token generation
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": user.ID,
 		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),

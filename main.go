@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/Haidarr-h/backend-go/controllers"
-	"github.com/Haidarr-h/backend-go/initializers"
 	_ "github.com/Haidarr-h/backend-go/docs" // swag generated docs
+	"github.com/Haidarr-h/backend-go/initializers"
+	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"github.com/gin-gonic/gin"
 )
 
 // @title           Backend Go API
@@ -27,6 +28,7 @@ func init() {
 
 func main() {
 	fmt.Println("Web Server started")
+	port := os.Getenv("PORT")
 
 	r := gin.Default()
 
@@ -41,8 +43,8 @@ func main() {
 	})
 
 	r.GET("/healthCheck", controllers.HealthCheck)
-	r.POST("/signupp", controllers.Signup)
+	r.POST("/signup", controllers.Signup)
 	r.POST("/signin", controllers.Login)
 
-	r.Run()
+	r.Run(":" + port)
 }

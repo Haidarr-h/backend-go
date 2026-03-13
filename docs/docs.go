@@ -110,11 +110,11 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "user@example.com"
+                    "example": "haidarGaming69@gmail.com"
                 },
                 "password": {
                     "type": "string",
-                    "example": "password123"
+                    "example": "haidarGaming123"
                 }
             }
         },

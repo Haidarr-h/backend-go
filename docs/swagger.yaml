@@ -3,10 +3,10 @@ definitions:
   controllers.AuthRequest:
     properties:
       email:
-        example: user@example.com
+        example: haidarGaming69@gmail.com
         type: string
       password:
-        example: password123
+        example: haidarGaming123
         type: string
     type: object
   controllers.AuthResponse:
