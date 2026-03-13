@@ -21,15 +21,6 @@ jobs:
         with:
           go-version: "1.22"
 
-      - name: Install swag
-        run: go install github.com/swaggo/swag/cmd/swag@latest
-
-      - name: Generate Swagger
-        run: swag init
-
-      - name: Install jq
-        run: sudo apt-get install -y jq
-      
       - name: Debug Swagger JSON
         run: |
           echo "=== swagger.json exists? ==="
@@ -39,8 +30,33 @@ jobs:
           echo "=== jq parse test ==="
           cat docs/swagger.json | jq -c . | head -c 200
 
+      
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Docker image
+        run: docker build -t ghcr.io/haidarr-h/backend-go:latest .
+
+      - name: Push Docker image
+        run: docker push ghcr.io/haidarr-h/backend-go:latest
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd ~/backend-go
+            git pull origin main
+            docker compose pull
+            docker compose up -d --force-recreate
+            docker image prune -f
+
       - name: Update Apidog Collection
         run: |
+          sleep 10
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
             "https://api.apidog.com/v1/projects/${{ secrets.APIDOG_PROJECT_ID }}/import-openapi?locale=en-US" \
             -H "X-Apidog-Api-Version: 2024-03-28" \
@@ -68,25 +84,3 @@ jobs:
             echo "ERROR: Apidog update failed with status $HTTP_STATUS"
             exit 1
           fi
-
-      - name: Login to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: Build Docker image
-        run: docker build -t ghcr.io/haidarr-h/backend-go:latest .
-
-      - name: Push Docker image
-        run: docker push ghcr.io/haidarr-h/backend-go:latest
-
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            cd ~/backend-go
-            git pull origin main
-            docker compose pull
-            docker compose up -d --force-recreate
-            docker image prune -f
