@@ -27,6 +27,11 @@ jobs:
       - name: Generate Swagger
         run: swag init
 
+      - name: Verify Swagger output   # ← add this
+        run: |
+          echo "=== signup ref ==="
+          cat docs/swagger.json | grep -A5 "Signup credentials"
+
       - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
