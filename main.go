@@ -7,6 +7,7 @@ import (
 	"github.com/Haidarr-h/backend-go/controllers"
 	_ "github.com/Haidarr-h/backend-go/docs" // swag generated docs
 	"github.com/Haidarr-h/backend-go/initializers"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -32,10 +33,18 @@ func main() {
 
 	r := gin.Default()
 
+	// CORS
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+	}))
+
+	// ROUTE
 	// Swagger UI route
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// test
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
@@ -45,6 +54,7 @@ func main() {
 	r.GET("/healthCheck", controllers.HealthCheck)
 	r.POST("/signup", controllers.Signup)
 	r.POST("/signin", controllers.Login)
+	r.POST("/auth/google/mobile", controllers.GoogleMobileSignIn)
 
 	r.Run(":" + port)
 }

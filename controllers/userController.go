@@ -88,7 +88,13 @@ func Signup(c *gin.Context) {
 	}
 
 	// create user model
-	user := models.User{Email: body.Email, Password: string(hash), FullName: body.FullName, Username: body.Username}
+	hashedPassword := string(hash)
+	user := models.User{
+		Email:    body.Email,
+		Password: &hashedPassword, // 👈 pass the address
+		FullName: body.FullName,
+		Username: body.Username,
+	}
 
 	// create the user data to database
 	result := initializers.DB.Create(&user)
@@ -137,7 +143,12 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
+	if user.Password == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "This account uses Google sign in"})
+		return
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(body.Password))
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Invalid Email or Password",

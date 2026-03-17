@@ -21,6 +21,13 @@ definitions:
         example: Invalid Email or Password
         type: string
     type: object
+  controllers.GoogleTokenRequest:
+    properties:
+      id_token:
+        type: string
+    required:
+    - id_token
+    type: object
   controllers.SignupRequest:
     properties:
       email:
@@ -54,6 +61,45 @@ info:
   title: Backend Go API
   version: "1.0"
 paths:
+  /auth/google/mobile:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user via Google ID token (mobile flow) and return
+        a JWT token
+      parameters:
+      - description: Google ID Token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.GoogleTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns JWT token and user info
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: id_token is required
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid Google token
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Sign in with Google
+      tags:
+      - auth
   /healthCheck:
     get:
       description: Perform status check to the server

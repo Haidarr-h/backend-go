@@ -1,7 +1,17 @@
 package initializers
 
-import "github.com/Haidarr-h/backend-go/models"
+import (
+	"fmt"
+
+	"github.com/Haidarr-h/backend-go/models"
+)
 
 func SyncDatabase() {
-	DB.AutoMigrate(&models.User{})
+	err := DB.AutoMigrate(&models.User{})
+
+	if err != nil {
+		fmt.Println("Auto Migration error: ", err)
+	} else {
+		fmt.Println("Database sync successful")
+	}
 }
