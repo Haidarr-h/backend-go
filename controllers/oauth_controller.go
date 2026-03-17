@@ -40,7 +40,7 @@ type GoogleUserInfo struct {
 // @Failure      500   {object}  map[string]interface{}  "Internal server error"
 // @Router       /auth/google/mobile [post]
 func GoogleMobileSignIn(c *gin.Context) {
-	// 1. Get the ID token from Flutter
+	// 1. Get the ID token from Flutter (sdks)
 	var req GoogleTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "id_token is required"})
