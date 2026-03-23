@@ -7,7 +7,7 @@ import (
 )
 
 func SyncDatabase() {
-	err := DB.AutoMigrate(&models.User{}, &models.Exercise{})
+	err := DB.AutoMigrate(&models.User{})
 
 	if err != nil {
 		fmt.Println("Auto Migration error: ", err)
