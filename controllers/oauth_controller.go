@@ -83,6 +83,15 @@ func GoogleMobileSignIn(c *gin.Context) {
 				return
 			}
 
+		} else if emailResult.Error == nil {
+			if err := initializers.DB.Model(&user).Updates(map[string]interface{}{
+				"google_id": googleUser.Sub,
+				"picture":   googleUser.Picture,
+			}).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": "failed to link google account",
+				})
+			}
 		} else {
 			// Already has an account with same email — link Google ID
 			initializers.DB.Model(&user).Updates(map[string]interface{}{
