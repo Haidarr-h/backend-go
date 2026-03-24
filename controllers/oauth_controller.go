@@ -60,17 +60,16 @@ func GoogleMobileSignIn(c *gin.Context) {
 	result := initializers.DB.Where("google_id = ?", googleUser.Sub).First(&user)
 
 	if result.Error == gorm.ErrRecordNotFound {
-		// Check if email already exists (signed up manually before)
+		// Check if email already exists
 		emailResult := initializers.DB.Where("email = ?", googleUser.Email).First(&user)
 
-		if emailResult.Error == gorm.ErrRecordNotFound {
-			// Brand new user — create them
-
+		switch emailResult.Error {
+		case gorm.ErrRecordNotFound:
+			// if email not found = brand new user
 			baseUsername := strings.Split(googleUser.Email, "@")[0]
-
 			user = models.User{
 				Email:    googleUser.Email,
-				Name:     googleUser.Name,
+				FullName: googleUser.Name,
 				GoogleID: googleUser.Sub,
 				Picture:  googleUser.Picture,
 				Username: baseUsername,
@@ -82,8 +81,8 @@ func GoogleMobileSignIn(c *gin.Context) {
 				})
 				return
 			}
-
-		} else if emailResult.Error == nil {
+		case nil:
+			// Email already exist (signed up manually before) - Link google ID
 			if err := initializers.DB.Model(&user).Updates(map[string]interface{}{
 				"google_id": googleUser.Sub,
 				"picture":   googleUser.Picture,
@@ -91,13 +90,12 @@ func GoogleMobileSignIn(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": "failed to link google account",
 				})
+				return
 			}
-		} else {
-			// Already has an account with same email — link Google ID
-			initializers.DB.Model(&user).Updates(map[string]interface{}{
-				"google_id": googleUser.Sub,
-				"picture":   googleUser.Picture,
-			})
+		default:
+			// Unexpected DB error — don't proceed
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+			return
 		}
 	}
 
@@ -118,13 +116,13 @@ func GoogleMobileSignIn(c *gin.Context) {
 		"user": gin.H{
 			"id":      user.ID,
 			"email":   user.Email,
-			"name":    user.Name,
+			"name":    user.FullName,
 			"picture": user.Picture,
 		},
 	})
 }
 
-// verifyGoogletoken calls Google's tokeninfo endpoint to validate the ID token
+// Validate the ID Token with google endpoint
 func verifyGoogleToken(idToken string) (*GoogleUserInfo, error) {
 	url := "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken
 
@@ -135,15 +133,18 @@ func verifyGoogleToken(idToken string) (*GoogleUserInfo, error) {
 
 	defer resp.Body.Close()
 
+	// check if google accept it (if expired, malformed, fake)
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("invalid token")
 	}
 
+	// read the body to get user data
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
+	// put the user data to the userInfo
 	var userInfo GoogleUserInfo
 	if err := json.Unmarshal(body, &userInfo); err != nil {
 		return nil, err
