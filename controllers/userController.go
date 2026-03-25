@@ -41,7 +41,7 @@ type ErrorResponse struct {
 // @Param        body  body      SignupRequest    true  "Signup credentials"
 // @Success      201   {object}  map[string]interface{}
 // @Failure      400   {object}  ErrorResponse
-// @Router       /signup [post]
+// @Router       /api/v1/auth/signup [post]
 func Signup(c *gin.Context) {
 	var body SignupRequest
 
@@ -120,7 +120,7 @@ func Signup(c *gin.Context) {
 // @Param        body  body      AuthRequest   true  "Login credentials"
 // @Success      200   {object}  AuthResponse
 // @Failure      400   {object}  ErrorResponse
-// @Router       /signin [post]
+// @Router       /api/v1/auth/signin [post]
 func Login(c *gin.Context) {
 	var body AuthRequest
 

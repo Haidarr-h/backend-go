@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/Haidarr-h/backend-go/controllers"
 	_ "github.com/Haidarr-h/backend-go/docs" // swag generated docs
 	"github.com/Haidarr-h/backend-go/initializers"
+	"github.com/Haidarr-h/backend-go/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -42,19 +44,29 @@ func main() {
 	}))
 
 	// ROUTE
-	// Swagger UI route
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-
 	r.GET("/healthCheck", controllers.HealthCheck)
-	r.POST("/signup", controllers.Signup)
-	r.POST("/signin", controllers.Login)
-	r.POST("/auth/google/mobile", controllers.GoogleMobileSignIn)
+
+	api := r.Group("/api")
+	{
+		v1 := api.Group("/v1")
+		{
+			authRoutes := v1.Group("/auth")
+			authRoutes.Use(middleware.RequireAPIKey())
+			authRoutes.Use(middleware.RateLimit(5, time.Minute))
+			{
+				authRoutes.POST("/signup", controllers.Signup)
+				authRoutes.POST("/signin", controllers.Login)
+				authRoutes.POST("/google/mobile", controllers.GoogleMobileSignIn)
+			}
+
+			exerciseRoutes := v1.Group("/exercises")
+			{
+				exerciseRoutes.GET("/", controllers.GetExercises)
+				exerciseRoutes.GET("/:id", controllers.GetExercise)
+			}
+		}
+	}
 
 	r.Run(":" + port)
 }
