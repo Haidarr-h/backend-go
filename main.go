@@ -15,9 +15,9 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-// @title           Backend Go API
+// @title           IronLog Backend Go API
 // @version         1.0
-// @description     My backend API built with Go and Gin
+// @description     Backend API for IronLog
 
 // @host      api-staging.liftlogs.my.id
 // @schemes   https
@@ -49,8 +49,10 @@ func main() {
 
 	api := r.Group("/api")
 	{
+		// version 1 routes
 		v1 := api.Group("/v1")
 		{
+			// auth routes
 			authRoutes := v1.Group("/auth")
 			authRoutes.Use(middleware.RequireAPIKey())
 			authRoutes.Use(middleware.RateLimit(5, time.Minute))
@@ -60,11 +62,17 @@ func main() {
 				authRoutes.POST("/google/mobile", controllers.GoogleMobileSignIn)
 			}
 
-			exerciseRoutes := v1.Group("/exercises")
+			// jwt protected routes
+			jwtProtectedRoutes := v1.Group("/")
+			jwtProtectedRoutes.Use(middleware.RequireAuth())
 			{
-				exerciseRoutes.GET("/", controllers.GetExercises)
-				exerciseRoutes.GET("/:id", controllers.GetExercise)
-				exerciseRoutes.POST("/", controllers.CreateExercise)
+				// exercises
+				exerciseRoutes := jwtProtectedRoutes.Group("/exercises")
+				{
+					exerciseRoutes.GET("/", controllers.GetExercises)
+					exerciseRoutes.GET("/:id", controllers.GetExercise)
+					exerciseRoutes.POST("/", controllers.CreateExercise)
+				}
 			}
 		}
 	}
