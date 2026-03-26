@@ -1,27 +1,27 @@
 package controllers
 
 import (
-	"net/http"
 	"os"
 	"time"
 
 	"github.com/Haidarr-h/backend-go/initializers"
 	"github.com/Haidarr-h/backend-go/models"
+	"github.com/Haidarr-h/backend-go/pkg/response"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthRequest struct {
-	Email    string `json:"email" example:"haidarGaming69@gmail.com"`
-	Password string `json:"password" example:"haidarGaming123"`
+	Email    string `json:"email" example:"haidar@gmail.com"`
+	Password string `json:"password" example:"haidarpassword"`
 }
 
 type SignupRequest struct {
-	Email    string `json:"email" binding:"required,email" example:"haidarGaming69@example.com"`
-	Password string `json:"password" binding:"required,min=8,max=24" example:"haidarGaming123"`
-	Username string `json:"username" binding:"required,min=3,max=24" example:"haidarsebastian99"`
-	FullName string `json:"fullName" binding:"required,min=3,max=24" example:"Haidar Maximus Sebastian"`
+	Email    string `json:"email" binding:"required,email" example:"haidar@gmail.com"`
+	Password string `json:"password" binding:"required,min=8,max=24" example:"haidarpassword"`
+	Username string `json:"username" binding:"required,min=3,max=24" example:"haidarIron"`
+	FullName string `json:"fullName" binding:"required,min=3,max=24" example:"Haidar Sebastian"`
 }
 
 type AuthResponse struct {
@@ -47,10 +47,7 @@ func Signup(c *gin.Context) {
 
 	// read the request body
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":  "Failed to read request body",
-			"detail": err.Error(),
-		})
+		response.BadRequest(c, "Failed to read request body", err.Error())
 		return
 	}
 
@@ -59,10 +56,7 @@ func Signup(c *gin.Context) {
 	errorEmail := initializers.DB.Where("email = ?", body.Email).First(&existingEmail).Error
 
 	if errorEmail == nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":  "Failed. Email already exist",
-			"detail": errorEmail,
-		})
+		response.BadRequest(c, "Failed. Email already exist", "Email already exist")
 		return
 	}
 
@@ -71,19 +65,14 @@ func Signup(c *gin.Context) {
 	errorUsername := initializers.DB.Where("username = ?", body.Username).First(&existingUsername).Error
 
 	if errorUsername == nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":  "Failed. Username already exist",
-			"detail": errorUsername,
-		})
+		response.BadRequest(c, "Failed. Username already exist", "Username already exist")
 		return
 	}
 
 	// hash the password
 	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to hash password",
-		})
+		response.InternalError(c, "Failed to hash password", err.Error())
 		return
 	}
 
@@ -91,7 +80,7 @@ func Signup(c *gin.Context) {
 	hashedPassword := string(hash)
 	user := models.User{
 		Email:    body.Email,
-		Password: &hashedPassword, // 👈 pass the address
+		Password: &hashedPassword, 
 		FullName: body.FullName,
 		Username: body.Username,
 	}
@@ -99,16 +88,11 @@ func Signup(c *gin.Context) {
 	// create the user data to database
 	result := initializers.DB.Create(&user)
 	if result.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":  "Failed to create user",
-			"detail": result.Error,
-		})
+		response.InternalError(c, "Failed to create user", result.Error.Error())
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "User created successfully",
-	})
+	response.Created(c, "User Created Succesfully", user)
 }
 
 // Login godoc
@@ -125,10 +109,8 @@ func Login(c *gin.Context) {
 	var body AuthRequest
 
 	// read the content type to decides how to parse the body
-	if c.ShouldBindJSON(&body) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to read body",
-		})
+	if err := c.ShouldBindJSON(&body); err != nil {
+		response.BadRequest(c, "Failed to read request body", err.Error())
 		return
 	}
 
@@ -137,22 +119,20 @@ func Login(c *gin.Context) {
 	initializers.DB.First(&user, "email = ? ", body.Email)
 
 	if user.ID == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Invalid Email or Password",
-		})
+		response.Unauthorized(c, "Invalid Email or Password")
 		return
 	}
 
 	if user.Password == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "This account uses Google sign in"})
+		response.Unauthorized(c, "This account uses Google sign in")
 		return
 	}
 
+	// checks passwords
 	err := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(body.Password))
+
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Invalid Email or Password",
-		})
+		response.BadRequest(c, "Invalid Email or Password", err.Error())
 		return
 	}
 
@@ -164,14 +144,11 @@ func Login(c *gin.Context) {
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET")))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to create token",
-			"err":   err,
-		})
+		response.BadRequest(c, "Failed to create token", err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	response.OK(c, "Login Successfull", gin.H{
 		"token": tokenString,
 	})
 }

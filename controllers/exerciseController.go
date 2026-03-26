@@ -1,11 +1,13 @@
 package controllers
 
 import (
-	"net/http"
+	"errors"
 
 	"github.com/Haidarr-h/backend-go/initializers"
 	"github.com/Haidarr-h/backend-go/models"
+	"github.com/Haidarr-h/backend-go/pkg/response"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type ExerciseRequest struct {
@@ -31,15 +33,17 @@ func GetExercises(c *gin.Context) {
 	// 3. Then populate exercises with the result
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.NotFound(c, "No Exercises Found", err.Error())
+			return
+		}
+
+		response.InternalError(c, "Error Fetching Exercise Data", err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data": exercises,
-	})
+	response.OK(c, "Successfully fetch all exercises", exercises)
 
 }
 
@@ -59,15 +63,17 @@ func GetExercise(c *gin.Context) {
 	err := initializers.DB.First(&exercise, exerciseId).Error
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.NotFound(c, "No Exercises Found", err.Error())
+			return
+		}
+
+		response.InternalError(c, "Error Fetching Exercise Data", err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data": exercise,
-	})
+	response.OK(c, "Successfully fetch exercise data", exercise)
 }
 
 // CreateExercise godoc
@@ -84,10 +90,7 @@ func CreateExercise(c *gin.Context) {
 
 	// 1. Read the requst body
 	if err := c.ShouldBindJSON(&exerciseBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":  "Failed to read request body",
-			"detail": err.Error(),
-		})
+		response.BadRequest(c, "Failed to read request body", err.Error())
 		return
 	}
 
@@ -96,9 +99,7 @@ func CreateExercise(c *gin.Context) {
 	err := initializers.DB.Where("name = ?", exerciseBody.Name).First(&existingExercise).Error
 
 	if err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Name already exist",
-		})
+		response.BadRequest(c, "Name already exist", "Bad Request")
 		return
 	}
 
@@ -113,14 +114,10 @@ func CreateExercise(c *gin.Context) {
 	result := initializers.DB.Create(&newExercise)
 
 	if result.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to create exercise",
-		})
+		response.InternalError(c, "Failed to create exercise", err.Error())
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"messages": "exercise created successfully",
-	})
+	response.Created(c, "exercise created successfully", newExercise)
 
 }
