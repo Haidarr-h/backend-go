@@ -64,6 +64,7 @@ func main() {
 			{
 				exerciseRoutes.GET("/", controllers.GetExercises)
 				exerciseRoutes.GET("/:id", controllers.GetExercise)
+				exerciseRoutes.POST("/", controllers.CreateExercise)
 			}
 		}
 	}

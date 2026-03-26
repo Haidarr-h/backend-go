@@ -15,6 +15,13 @@ type ExerciseRequest struct {
 	Category    string `json:"category"`
 }
 
+// GetExercises godoc
+// @Summary      Get all exercises
+// @Tags         exercises
+// @Produce      json
+// @Success      200  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /api/v1/exercises [get]
 func GetExercises(c *gin.Context) {
 	var exercises []models.Exercise
 
@@ -36,6 +43,14 @@ func GetExercises(c *gin.Context) {
 
 }
 
+// GetExercise godoc
+// @Summary      Get a single exercise
+// @Tags         exercises
+// @Produce      json
+// @Param        id   path      string  true  "Exercise ID"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /api/v1/exercises/{id} [get]
 func GetExercise(c *gin.Context) {
 	exerciseId := c.Param("id")
 
@@ -55,6 +70,15 @@ func GetExercise(c *gin.Context) {
 	})
 }
 
+// CreateExercise godoc
+// @Summary      Create a new exercise
+// @Tags         exercises
+// @Accept       json
+// @Produce      json
+// @Param        body  body      ExerciseRequest  true  "Exercise data"
+// @Success      201   {object}  map[string]interface{}
+// @Failure      400   {object}  map[string]interface{}
+// @Router       /api/v1/exercises [post]
 func CreateExercise(c *gin.Context) {
 	var exerciseBody ExerciseRequest
 
