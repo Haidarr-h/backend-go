@@ -15,7 +15,8 @@ func RequireAuth() gin.HandlerFunc {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "missing authorization header",
+				"success": false,
+				"message": "Missing authorization header",
 			})
 			return
 		}
@@ -24,7 +25,8 @@ func RequireAuth() gin.HandlerFunc {
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid authorization format",
+				"success": false,
+				"message": "Invalid authorization format",
 			})
 			return
 		}
@@ -40,7 +42,8 @@ func RequireAuth() gin.HandlerFunc {
 
 		if err != nil || !token.Valid {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid or expired token",
+				"success": false,
+				"message": "Invalid or expired token",
 			})
 			return
 		}

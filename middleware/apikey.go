@@ -14,7 +14,8 @@ func RequireAPIKey() gin.HandlerFunc {
 
 		if key == "" || key != expected {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "Missing or invalid API key",
+				"success": false,
+				"message": "Missing or invalid API key",
 			})
 			return
 		}
