@@ -3,10 +3,10 @@ definitions:
   controllers.AuthRequest:
     properties:
       email:
-        example: haidarGaming69@gmail.com
+        example: haidar@gmail.com
         type: string
       password:
-        example: haidarGaming123
+        example: haidarpassword
         type: string
     type: object
   controllers.AuthResponse:
@@ -21,6 +21,16 @@ definitions:
         example: Invalid Email or Password
         type: string
     type: object
+  controllers.ExerciseDelReq:
+    properties:
+      id:
+        items:
+          type: integer
+        minItems: 1
+        type: array
+    required:
+    - id
+    type: object
   controllers.ExerciseRequest:
     properties:
       category:
@@ -32,6 +42,21 @@ definitions:
       name:
         type: string
     type: object
+  controllers.ExerciseUpdateRequest:
+    properties:
+      category:
+        type: string
+      equipment:
+        type: string
+      id:
+        type: integer
+      muscleGroup:
+        type: string
+      name:
+        type: string
+    required:
+    - id
+    type: object
   controllers.GoogleTokenRequest:
     properties:
       id_token:
@@ -42,20 +67,20 @@ definitions:
   controllers.SignupRequest:
     properties:
       email:
-        example: haidarGaming69@example.com
+        example: haidar@gmail.com
         type: string
       fullName:
-        example: Haidar Maximus Sebastian
+        example: Haidar Sebastian
         maxLength: 24
         minLength: 3
         type: string
       password:
-        example: haidarGaming123
+        example: haidarpassword
         maxLength: 24
         minLength: 8
         type: string
       username:
-        example: haidarsebastian99
+        example: haidarIron
         maxLength: 24
         minLength: 3
         type: string
@@ -68,8 +93,8 @@ definitions:
 host: api-staging.liftlogs.my.id
 info:
   contact: {}
-  description: My backend API built with Go and Gin
-  title: Backend Go API
+  description: Backend API for IronLog
+  title: IronLog Backend Go API
   version: "1.0"
 paths:
   /api/v1/auth/signin:
@@ -126,6 +151,32 @@ paths:
       tags:
       - auth
   /api/v1/exercises:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Exercise data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.ExerciseDelReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete exercises
+      tags:
+      - exercises
     get:
       produces:
       - application/json
@@ -141,6 +192,32 @@ paths:
             additionalProperties: true
             type: object
       summary: Get all exercises
+      tags:
+      - exercises
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Exercise data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.ExerciseUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update a exercise
       tags:
       - exercises
     post:

@@ -160,6 +160,84 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exercises"
+                ],
+                "summary": "Delete exercises",
+                "parameters": [
+                    {
+                        "description": "Exercise data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ExerciseDelReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exercises"
+                ],
+                "summary": "Update a exercise",
+                "parameters": [
+                    {
+                        "description": "Exercise data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.ExerciseUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
             }
         },
         "/api/v1/exercises/{id}": {
@@ -268,11 +346,11 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "haidarGaming69@gmail.com"
+                    "example": "haidar@gmail.com"
                 },
                 "password": {
                     "type": "string",
-                    "example": "haidarGaming123"
+                    "example": "haidarpassword"
                 }
             }
         },
@@ -294,6 +372,21 @@ const docTemplate = `{
                 }
             }
         },
+        "controllers.ExerciseDelReq": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "controllers.ExerciseRequest": {
             "type": "object",
             "properties": {
@@ -302,6 +395,29 @@ const docTemplate = `{
                 },
                 "equipment": {
                     "type": "string"
+                },
+                "muscleGroup": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "controllers.ExerciseUpdateRequest": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "equipment": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
                 },
                 "muscleGroup": {
                     "type": "string"
@@ -333,25 +449,25 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "haidarGaming69@example.com"
+                    "example": "haidar@gmail.com"
                 },
                 "fullName": {
                     "type": "string",
                     "maxLength": 24,
                     "minLength": 3,
-                    "example": "Haidar Maximus Sebastian"
+                    "example": "Haidar Sebastian"
                 },
                 "password": {
                     "type": "string",
                     "maxLength": 24,
                     "minLength": 8,
-                    "example": "haidarGaming123"
+                    "example": "haidarpassword"
                 },
                 "username": {
                     "type": "string",
                     "maxLength": 24,
                     "minLength": 3,
-                    "example": "haidarsebastian99"
+                    "example": "haidarIron"
                 }
             }
         }
@@ -364,8 +480,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "api-staging.liftlogs.my.id",
 	BasePath:         "/",
 	Schemes:          []string{"https"},
-	Title:            "Backend Go API",
-	Description:      "My backend API built with Go and Gin",
+	Title:            "IronLog Backend Go API",
+	Description:      "Backend API for IronLog",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
