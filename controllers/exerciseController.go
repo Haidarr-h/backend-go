@@ -39,6 +39,12 @@ type ExerciseDelReq struct {
 func GetExercises(c *gin.Context) {
 	var exercises []models.Exercise
 
+	// check if there are any exercises
+	if result := initializers.DB.First(&exercises); result.RowsAffected == 0 {
+		response.OK(c, "No Exercise Found", "")
+		return
+	}
+
 	err := initializers.DB.Find(&exercises).Error
 	// 1. Look at the type of exercises (to which table)
 	// 2. fetch all rows from it
