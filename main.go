@@ -66,7 +66,7 @@ func main() {
 			jwtProtectedRoutes := v1.Group("/")
 			jwtProtectedRoutes.Use(middleware.RequireAuth())
 			{
-				// exercises
+				// EXERCISES ROUTE
 				exerciseRoutes := jwtProtectedRoutes.Group("/exercises")
 				{
 					exerciseRoutes.GET("/", controllers.GetExercises)
@@ -74,6 +74,16 @@ func main() {
 					exerciseRoutes.POST("/", controllers.CreateExercise)
 					exerciseRoutes.PATCH("/", controllers.UpdateExercises)
 					exerciseRoutes.DELETE("/", controllers.DeleteExercises)
+				}
+
+				// USERS ROUTE
+				usersRoutes := jwtProtectedRoutes.Group("/users")
+				{
+					usersRoutes.GET("/", controllers.GetUsers)
+					usersRoutes.GET("/:id", controllers.GetUser)
+					usersRoutes.POST("/", controllers.CreateExercise)
+					usersRoutes.PATCH("/", controllers.UpdateUser)
+					usersRoutes.DELETE("/:id", controllers.DeleteUser)
 				}
 			}
 		}
