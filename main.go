@@ -3,12 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/Haidarr-h/backend-go/controllers"
-	_ "github.com/Haidarr-h/backend-go/docs" // swag generated docs
+	_ "github.com/Haidarr-h/backend-go/docs"
 	"github.com/Haidarr-h/backend-go/initializers"
-	"github.com/Haidarr-h/backend-go/middleware"
+	"github.com/Haidarr-h/backend-go/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -47,53 +46,7 @@ func main() {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.GET("/healthCheck", controllers.HealthCheck)
 
-	api := r.Group("/api")
-	{
-		// version 1 routes
-		v1 := api.Group("/v1")
-		{
-			// auth routes
-			authRoutes := v1.Group("/auth")
-			authRoutes.Use(middleware.RequireAPIKey())
-			authRoutes.Use(middleware.RateLimit(5, time.Minute))
-			{
-				authRoutes.POST("/signup", controllers.Signup)
-				authRoutes.POST("/signin", controllers.Login)
-				authRoutes.POST("/google/mobile", controllers.GoogleMobileSignIn)
-			}
-
-			// jwt protected routes
-			jwtProtectedRoutes := v1.Group("/")
-			jwtProtectedRoutes.Use(middleware.RequireAuth())
-			{
-				// EXERCISES ROUTE
-				exerciseRoutes := jwtProtectedRoutes.Group("/exercises")
-				{
-					exerciseRoutes.GET("/", controllers.GetExercises)
-					exerciseRoutes.GET("/:id", controllers.GetExercise)
-					exerciseRoutes.POST("/", controllers.CreateExercise)
-					exerciseRoutes.PATCH("/", controllers.UpdateExercises)
-					exerciseRoutes.DELETE("/", controllers.DeleteExercises)
-				}
-
-				// USERS ROUTE
-				usersRoutes := jwtProtectedRoutes.Group("/users")
-				{
-					usersRoutes.GET("/", controllers.GetUsers)
-					usersRoutes.GET("/:id", controllers.GetUser)
-					usersRoutes.POST("/", controllers.CreateExercise)
-					usersRoutes.PATCH("/", controllers.UpdateUser)
-					usersRoutes.DELETE("/:id", controllers.DeleteUser)
-				}
-
-				// ROUTINE ROUTE
-				routinesRoutes := jwtProtectedRoutes.Group("/routines")
-				{
-					routinesRoutes.POST("/", controllers.NewRoutineController())
-				}
-			}
-		}
-	}
+	routes.RegisterRoutes(r)
 
 	r.Run(":" + port)
 }

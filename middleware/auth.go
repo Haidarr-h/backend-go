@@ -50,7 +50,18 @@ func RequireAuth() gin.HandlerFunc {
 
 		// 4. Pass the user ID downstream to controllers
 		claims, _ := token.Claims.(jwt.MapClaims)
-		c.Set("userID", claims["sub"])
+
+		// convert it to uint
+		sub, ok := claims["sub"].(float64)
+
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": "Invalid token claims",
+			})
+		}
+		
+		c.Set("userID", uint(sub))
 		c.Next()
 	}
 }
