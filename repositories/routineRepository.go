@@ -25,11 +25,34 @@ func (r *RoutineRepository) Create(routine models.Routine) (models.Routine, erro
 
 func (r *RoutineRepository) FindAll(userID uint) ([]models.Routine, error) {
 	var routine []models.Routine
-	
+
 	result := r.db.Where("user_id = ?", userID).Preload("RoutineExercises.Exercise").Find(&routine)
 
 	if result.Error != nil {
 		return nil, result.Error
+	}
+
+	return routine, nil
+}
+
+func (r *RoutineRepository) Update(routine models.Routine) (models.Routine, error) {
+
+	result := r.db.Save(&routine)
+
+	if result.Error != nil {
+		return models.Routine{}, result.Error
+	}
+
+	return routine, nil
+}
+
+func (r *RoutineRepository) FindByID(id uint) (models.Routine, error) {
+	var routine models.Routine
+
+	result := r.db.Where("id = ?", id).Preload("RoutineExercises.Exercise").Find(&routine)
+
+	if result.Error != nil {
+		return models.Routine{}, result.Error
 	}
 
 	return routine, nil

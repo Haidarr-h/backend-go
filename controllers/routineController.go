@@ -15,10 +15,6 @@ func NewRoutineController(routineService *services.RoutineService) *RoutineContr
 	return &RoutineController{routineService: routineService}
 }
 
-func GetRoutine(c *gin.Context) {
-
-}
-
 // CreateRoutine godoc
 // @Summary      Create Routine
 // @Tags         routines
@@ -75,4 +71,8 @@ func (rc *RoutineController) GetRoutines(c *gin.Context) {
 
 	// 3. return the response
 	response.OK(c, "Fetch Successfully", result)
+}
+
+func (rc *RoutineController) UpdateRoutine(c *gin.Context) {
+	// 
 }

@@ -17,3 +17,10 @@ type RoutineResponse struct {
 	RoutineExercises []RoutineExerciseResponse `json:"routineExercises"`
 	CreatedAt        time.Time                 `json:"createdAt"`
 }
+
+type UpdateRoutineReq struct {
+	Name             *string                    `json:"name"`
+	Description      *string                    `json:"description"`
+	IsPublic         *bool                      `json:"isPublic"`
+	RoutineExercises []RoutineExercisesRequest `json:"routineExercises"`
+}

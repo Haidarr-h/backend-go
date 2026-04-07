@@ -63,6 +63,51 @@ func (s *RoutineService) GetRoutines(userID uint) ([]dto.RoutineResponse, error)
 	return response, nil
 }
 
+func (s *RoutineService) UpdateRoutine(id uint, req dto.UpdateRoutineReq) (dto.RoutineResponse, error) {
+	// 1. Fetch existing, so we have a complete model
+	existing, err := s.routineRepo.FindByID(id)
+	if err != nil {
+		return dto.RoutineResponse{}, err
+	}
+
+	// 2. Apply the only changes
+	if req.Name != nil {
+		existing.Name = *req.Name
+	}
+	if req.Description != nil {
+		existing.Description = *req.Description
+	}
+	if req.IsPublic != nil {
+		existing.IsPublic = *req.IsPublic
+	}
+	if req.RoutineExercises != nil {
+		var exercises []models.RoutineExercises
+
+		// map exercises dto to model
+		for _, e := range req.RoutineExercises {
+			exercises = append(exercises, models.RoutineExercises{
+				ExerciseID: e.ExerciseID,
+				RoutineID:  id,
+				Order:      e.Order,
+				Sets:       e.Sets,
+				Reps:       e.Reps,
+				WeightKG:   e.WeightKG,
+				RestSecond: e.RestSecond,
+			})
+		}
+
+		existing.RoutineExercises = exercises
+	}
+
+	// 3. save the full model
+	updated, err := s.routineRepo.Update(existing)
+	if err != nil {
+		return dto.RoutineResponse{}, err
+	}
+
+	return mapToRoutineResponse(updated), nil
+}
+
 func mapToRoutineResponse(r models.Routine) dto.RoutineResponse {
 	var exercises []dto.RoutineExerciseResponse
 
