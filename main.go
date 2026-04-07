@@ -85,6 +85,12 @@ func main() {
 					usersRoutes.PATCH("/", controllers.UpdateUser)
 					usersRoutes.DELETE("/:id", controllers.DeleteUser)
 				}
+
+				// ROUTINE ROUTE
+				routinesRoutes := jwtProtectedRoutes.Group("/routines")
+				{
+					routinesRoutes.POST("/", controllers.NewRoutineController())
+				}
 			}
 		}
 	}
