@@ -22,3 +22,15 @@ func (r *RoutineRepository) Create(routine models.Routine) (models.Routine, erro
 
 	return routine, nil
 }
+
+func (r *RoutineRepository) FindAll(userID uint) ([]models.Routine, error) {
+	var routine []models.Routine
+	
+	result := r.db.Where("user_id = ?", userID).Preload("RoutineExercises.Exercise").Find(&routine)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return routine, nil
+}

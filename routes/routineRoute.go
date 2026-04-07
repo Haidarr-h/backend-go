@@ -14,9 +14,11 @@ func RegisterRoutineRoutes(rg *gin.RouterGroup) {
 	routineService := services.NewRoutineService(routineRepo)
 	routineController := controllers.NewRoutineController(routineService)
 
-	routine := rg.Group("/routine")
+	routine := rg.Group("/routines")
 	{
 		routine.POST("/", routineController.CreateRoutine)
+		routine.GET("/", routineController.GetRoutines)
+
 	}
 
 }
