@@ -13,6 +13,7 @@ func NewRoutineRepository(db *gorm.DB) *RoutineRepository {
 	return &RoutineRepository{db: db}
 }
 
+// CREATE
 func (r *RoutineRepository) Create(routine models.Routine) (models.Routine, error) {
 	result := r.db.Create(&routine)
 
@@ -23,6 +24,7 @@ func (r *RoutineRepository) Create(routine models.Routine) (models.Routine, erro
 	return routine, nil
 }
 
+// READ
 func (r *RoutineRepository) FindAll(userID uint) ([]models.Routine, error) {
 	var routine []models.Routine
 
@@ -35,9 +37,35 @@ func (r *RoutineRepository) FindAll(userID uint) ([]models.Routine, error) {
 	return routine, nil
 }
 
+// UPDATE
 func (r *RoutineRepository) Update(routine models.Routine) (models.Routine, error) {
 
-	result := r.db.Save(&routine)
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. delete existing exercises
+		if err := tx.Where("routine_id = ?", routine.ID).Delete(&models.RoutineExercises{}).Error; err != nil {
+			return err
+		}
+
+		// 2. save routine with new exercises
+		if err := tx.Save(&routine).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return models.Routine{}, err
+	}
+
+	return routine, nil
+}
+
+// GET one
+func (r *RoutineRepository) FindByID(id uint) (models.Routine, error) {
+	var routine models.Routine
+
+	result := r.db.Where("id = ?", id).Preload("RoutineExercises.Exercise").First(&routine)
 
 	if result.Error != nil {
 		return models.Routine{}, result.Error
@@ -46,14 +74,30 @@ func (r *RoutineRepository) Update(routine models.Routine) (models.Routine, erro
 	return routine, nil
 }
 
-func (r *RoutineRepository) FindByID(id uint) (models.Routine, error) {
-	var routine models.Routine
+// DELETE
+func (r *RoutineRepository) Delete(id uint, userId uint) error {
 
-	result := r.db.Where("id = ?", id).Preload("RoutineExercises.Exercise").Find(&routine)
+	// we need transaction because we will modify 2 tables (routine and routine exercises)
+	// 1. Transactions
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		// 1.1 Delete the routine exercises first (its the routine children)
+		if err := tx.Where("routine_id = ?", id).Delete(&models.RoutineExercises{}).Error; err != nil {
+			return err
+		}
 
-	if result.Error != nil {
-		return models.Routine{}, result.Error
-	}
+		// 1.2 Delete the routine
+		result := tx.Where("id = ? AND user_id = ?", id, userId).Delete(&models.Routine{})
+		if result.Error != nil {
+			return result.Error
+		}
 
-	return routine, nil
+		// 1.3 check if there is even that row ?
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+
+		return nil
+	})
+
+	return err
 }

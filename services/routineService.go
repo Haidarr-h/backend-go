@@ -1,9 +1,12 @@
 package services
 
 import (
+	"errors"
+
 	"github.com/Haidarr-h/backend-go/dto"
 	"github.com/Haidarr-h/backend-go/models"
 	"github.com/Haidarr-h/backend-go/repositories"
+	"gorm.io/gorm"
 )
 
 type RoutineService struct {
@@ -14,6 +17,7 @@ func NewRoutineService(routineRepo *repositories.RoutineRepository) *RoutineServ
 	return &RoutineService{routineRepo: routineRepo}
 }
 
+// CREATE
 func (s *RoutineService) CreateRoutine(userID uint, req dto.CreateRoutineRequest) (dto.RoutineResponse, error) {
 	// 1. map DTO to model
 	routine := models.Routine{
@@ -47,6 +51,7 @@ func (s *RoutineService) CreateRoutine(userID uint, req dto.CreateRoutineRequest
 
 }
 
+// GET ALL ROUTINES
 func (s *RoutineService) GetRoutines(userID uint) ([]dto.RoutineResponse, error) {
 	// run the repo function
 	routines, err := s.routineRepo.FindAll(userID)
@@ -63,10 +68,14 @@ func (s *RoutineService) GetRoutines(userID uint) ([]dto.RoutineResponse, error)
 	return response, nil
 }
 
+// UPDATE
 func (s *RoutineService) UpdateRoutine(id uint, req dto.UpdateRoutineReq) (dto.RoutineResponse, error) {
 	// 1. Fetch existing, so we have a complete model
 	existing, err := s.routineRepo.FindByID(id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return dto.RoutineResponse{}, errors.New("routine not found")
+		}
 		return dto.RoutineResponse{}, err
 	}
 
@@ -108,6 +117,24 @@ func (s *RoutineService) UpdateRoutine(id uint, req dto.UpdateRoutineReq) (dto.R
 	return mapToRoutineResponse(updated), nil
 }
 
+// DELETE
+func (s *RoutineService) DeleteRoutine(routineId uint, userId uint) error {
+
+	err := s.routineRepo.Delete(routineId, userId)
+
+	if err != nil {
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("routine not found")
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+// HELPER MAPPING
 func mapToRoutineResponse(r models.Routine) dto.RoutineResponse {
 	var exercises []dto.RoutineExerciseResponse
 

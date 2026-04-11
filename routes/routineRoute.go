@@ -18,7 +18,7 @@ func RegisterRoutineRoutes(rg *gin.RouterGroup) {
 	{
 		routine.POST("/", routineController.CreateRoutine)
 		routine.GET("/", routineController.GetRoutines)
-
+		routine.PUT("/:id", routineController.UpdateRoutine)
+		routine.DELETE("/:id", routineController.DeleteRoutine)
 	}
-
 }
