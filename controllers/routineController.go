@@ -118,6 +118,14 @@ func (rc *RoutineController) UpdateRoutine(c *gin.Context) {
 	response.OK(c, "Success Updating user routine", result)
 }
 
+// DeleteRoutine godoc
+// @Summary      delete routine
+// @Tags         routines
+// @Accept       json
+// @Produce      json
+// @Success      200   {object}  map[string]interface{}
+// @Failure      400   {object}  map[string]interface{}
+// @Router       /api/v1/routines [delete]
 func (rc *RoutineController) DeleteRoutine(c *gin.Context) {
 	// 1. get user id from token
 	userId := c.GetUint("userID")
