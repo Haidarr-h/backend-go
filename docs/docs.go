@@ -333,7 +333,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/api/v1/routines/{id}": {
             "delete": {
                 "consumes": [
                     "application/json"

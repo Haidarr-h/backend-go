@@ -84,7 +84,7 @@ func (rc *RoutineController) GetRoutines(c *gin.Context) {
 // @Produce      json
 // @Success      200   {object}  map[string]interface{}
 // @Failure      400   {object}  map[string]interface{}
-// @Router       /api/v1/routines [patch]
+// @Router       /api/v1/routines/{id} [patch]
 func (rc *RoutineController) UpdateRoutine(c *gin.Context) {
 	// 1. get user id from token
 	userID := c.GetUint("userID")
@@ -125,7 +125,7 @@ func (rc *RoutineController) UpdateRoutine(c *gin.Context) {
 // @Produce      json
 // @Success      200   {object}  map[string]interface{}
 // @Failure      400   {object}  map[string]interface{}
-// @Router       /api/v1/routines [delete]
+// @Router       /api/v1/routines/{id} [delete]
 func (rc *RoutineController) DeleteRoutine(c *gin.Context) {
 	// 1. get user id from token
 	userId := c.GetUint("userID")
