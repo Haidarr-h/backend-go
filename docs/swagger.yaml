@@ -64,7 +64,34 @@ definitions:
     required:
     - id_token
     type: object
-  controllers.SignupRequest:
+  controllers.updateReq:
+    properties:
+      fullName:
+        type: string
+      id:
+        minimum: 1
+        type: integer
+      username:
+        type: string
+    required:
+    - id
+    type: object
+  dto.SignInReq:
+    properties:
+      email:
+        example: haidar@gmail.com
+        type: string
+      password:
+        example: haidarpassword
+        type: string
+    type: object
+  dto.SignInRes:
+    properties:
+      token:
+        example: xxxxxxxx...
+        type: string
+    type: object
+  dto.SignUpRequest:
     properties:
       email:
         example: haidar@gmail.com
@@ -89,18 +116,6 @@ definitions:
     - fullName
     - password
     - username
-    type: object
-  controllers.updateReq:
-    properties:
-      fullName:
-        type: string
-      id:
-        minimum: 1
-        type: integer
-      username:
-        type: string
-    required:
-    - id
     type: object
 host: api-staging.liftlogs.my.id
 info:
@@ -146,7 +161,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/controllers.SignupRequest'
+          $ref: '#/definitions/dto.SignUpRequest'
       produces:
       - application/json
       responses:
@@ -158,7 +173,8 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/controllers.ErrorResponse'
+            additionalProperties: true
+            type: object
       summary: Register a new user
       tags:
       - auth

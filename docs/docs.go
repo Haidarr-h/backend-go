@@ -75,7 +75,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.SignupRequest"
+                            "$ref": "#/definitions/dto.SignUpRequest"
                         }
                     }
                 ],
@@ -90,7 +90,8 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/controllers.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -679,7 +680,47 @@ const docTemplate = `{
                 }
             }
         },
-        "controllers.SignupRequest": {
+        "controllers.updateReq": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "fullName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SignInReq": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "haidar@gmail.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "haidarpassword"
+                }
+            }
+        },
+        "dto.SignInRes": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "xxxxxxxx..."
+                }
+            }
+        },
+        "dto.SignUpRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -709,24 +750,6 @@ const docTemplate = `{
                     "maxLength": 24,
                     "minLength": 3,
                     "example": "haidarIron"
-                }
-            }
-        },
-        "controllers.updateReq": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "fullName": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "username": {
-                    "type": "string"
                 }
             }
         }

@@ -21,7 +21,7 @@ func NewAuthController(authService *services.AuthService) *AuthController {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        body  body      dto.SignupRequest    true  "Signup credentials"
+// @Param        body  body      dto.SignUpRequest    true  "Signup credentials"
 // @Success      201   {object}  map[string]interface{}
 // @Failure      400   {object}  map[string]interface{}
 // @Router       /api/v1/auth/signup [post]
