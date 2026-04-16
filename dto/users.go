@@ -9,3 +9,5 @@ type UserResponse struct {
 	Password string            `json:"password"`
 	Routine  []RoutineResponse `json:"routine"`
 }
+
+
