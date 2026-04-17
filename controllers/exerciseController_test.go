@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Haidarr-h/backend-go/controllers"
-	"github.com/Haidarr-h/backend-go/initializers"
+	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/models"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +22,7 @@ func setupTestDB(t *testing.T) {
 		t.Fatal("Failed to connect test db:", err)
 	}
 	db.AutoMigrate(&models.Exercise{})
-	initializers.DB = db
+	config.DB = db
 }
 
 // Test 1: success case
@@ -30,14 +30,14 @@ func TestGetExercises_Success(t *testing.T) {
 	setupTestDB(t)
 
 	// seed fake data in to the memory db
-	initializers.DB.Create(&models.Exercise{
+	config.DB.Create(&models.Exercise{
 		Name:        "Bench Press",
 		MuscleGroup: "Chest",
 		Equipment:   "Barbell",
 		Category:    "Compound",
 	})
 
-	initializers.DB.Create(&models.Exercise{
+	config.DB.Create(&models.Exercise{
 		Name:        "Squat",
 		MuscleGroup: "Legs",
 		Equipment:   "Barbell",

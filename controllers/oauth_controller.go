@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Haidarr-h/backend-go/initializers"
+	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/models"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -57,11 +57,11 @@ func GoogleMobileSignIn(c *gin.Context) {
 
 	// 3. Find or create the user in your DB
 	var user models.User
-	result := initializers.DB.Where("google_id = ?", googleUser.Sub).First(&user)
+	result := config.DB.Where("google_id = ?", googleUser.Sub).First(&user)
 
 	if result.Error == gorm.ErrRecordNotFound {
 		// Check if email already exists
-		emailResult := initializers.DB.Where("email = ?", googleUser.Email).First(&user)
+		emailResult := config.DB.Where("email = ?", googleUser.Email).First(&user)
 
 		switch emailResult.Error {
 		case gorm.ErrRecordNotFound:
@@ -75,7 +75,7 @@ func GoogleMobileSignIn(c *gin.Context) {
 				Username: baseUsername,
 			}
 
-			if err := initializers.DB.Create(&user).Error; err != nil {
+			if err := config.DB.Create(&user).Error; err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": "failed to create user",
 				})
@@ -83,7 +83,7 @@ func GoogleMobileSignIn(c *gin.Context) {
 			}
 		case nil:
 			// Email already exist (signed up manually before) - Link google ID
-			if err := initializers.DB.Model(&user).Updates(map[string]interface{}{
+			if err := config.DB.Model(&user).Updates(map[string]interface{}{
 				"google_id": googleUser.Sub,
 				"picture":   googleUser.Picture,
 			}).Error; err != nil {

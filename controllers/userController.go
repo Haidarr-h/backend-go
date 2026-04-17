@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"github.com/Haidarr-h/backend-go/initializers"
+	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/models"
 	"github.com/Haidarr-h/backend-go/pkg/response"
 	"github.com/gin-gonic/gin"
@@ -24,7 +24,7 @@ func GetUsers(c *gin.Context) {
 	var users []models.User
 
 	// get all records
-	result := initializers.DB.Find(&users)
+	result := config.DB.Find(&users)
 
 	if result.Error != nil {
 		response.InternalError(c, "Failed to fetch users data", "")
@@ -47,7 +47,7 @@ func GetUser(c *gin.Context) {
 
 	var user models.User
 
-	if err := initializers.DB.First(&user, userId).Error; err != nil {
+	if err := config.DB.First(&user, userId).Error; err != nil {
 		response.InternalError(c, "Failed to fetch user data", err.Error())
 		return
 	}
@@ -85,7 +85,7 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	// 3. update to database
-	if err := initializers.DB.Model(models.User{}).Where("id = ?", req.Id).Updates(updates).Error; err != nil {
+	if err := config.DB.Model(models.User{}).Where("id = ?", req.Id).Updates(updates).Error; err != nil {
 		response.InternalError(c, "Failed to update user data to database", err.Error())
 		return
 	}
@@ -108,13 +108,13 @@ func DeleteUser(c *gin.Context) {
 	user := models.User{}
 
 	// 2. check if user exist
-	if err := initializers.DB.First(&user, id).Error; err != nil {
+	if err := config.DB.First(&user, id).Error; err != nil {
 		response.BadRequest(c, "User not found", err.Error())
 		return
 	}
 
 	// 3. Delete
-	if err := initializers.DB.Delete(&user, id).Error; err != nil {
+	if err := config.DB.Delete(&user, id).Error; err != nil {
 		response.InternalError(c, "Failed to delete user", err.Error())
 		return
 	}

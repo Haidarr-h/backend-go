@@ -3,7 +3,7 @@ package controllers
 import (
 	"errors"
 
-	"github.com/Haidarr-h/backend-go/initializers"
+	config "github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/models"
 	"github.com/Haidarr-h/backend-go/pkg/response"
 	"github.com/gin-gonic/gin"
@@ -40,12 +40,12 @@ func GetExercises(c *gin.Context) {
 	var exercises []models.Exercise
 
 	// check if there are any exercises
-	if result := initializers.DB.First(&exercises); result.RowsAffected == 0 {
+	if result := config.DB.First(&exercises); result.RowsAffected == 0 {
 		response.OK(c, "No Exercise Found", "")
 		return
 	}
 
-	err := initializers.DB.Find(&exercises).Error
+	err := config.DB.Find(&exercises).Error
 	// 1. Look at the type of exercises (to which table)
 	// 2. fetch all rows from it
 	// 3. Then populate exercises with the result
@@ -78,7 +78,7 @@ func GetExercise(c *gin.Context) {
 
 	var exercise models.Exercise
 
-	err := initializers.DB.First(&exercise, exerciseId).Error
+	err := config.DB.First(&exercise, exerciseId).Error
 
 	if err != nil {
 
@@ -114,7 +114,7 @@ func CreateExercise(c *gin.Context) {
 
 	// 2. Check if the same exercise already exist (return error if not found)
 	var existingExercise models.Exercise
-	err := initializers.DB.Where("name = ?", exerciseBody.Name).First(&existingExercise).Error
+	err := config.DB.Where("name = ?", exerciseBody.Name).First(&existingExercise).Error
 
 	if err == nil {
 		response.BadRequest(c, "Name already exist", "Bad Request")
@@ -129,7 +129,7 @@ func CreateExercise(c *gin.Context) {
 		Category:    exerciseBody.Category,
 	}
 
-	result := initializers.DB.Create(&newExercise)
+	result := config.DB.Create(&newExercise)
 
 	if result.Error != nil {
 		response.InternalError(c, "Failed to create exercise", err.Error())
@@ -179,7 +179,7 @@ func UpdateExercises(c *gin.Context) {
 	}
 
 	// 3. Updates the database
-	err := initializers.DB.Model(models.Exercise{}).Where("id = ?", updateExercise.Id).Updates(updates).Error
+	err := config.DB.Model(models.Exercise{}).Where("id = ?", updateExercise.Id).Updates(updates).Error
 
 	if err != nil {
 		response.InternalError(c, "Failed to update user", err.Error())
@@ -209,7 +209,7 @@ func DeleteExercises(c *gin.Context) {
 	}
 
 	// 2. Delete
-	result := initializers.DB.Delete(&exercise, deleteExercise.Id)
+	result := config.DB.Delete(&exercise, deleteExercise.Id)
 
 	if result.Error != nil {
 		response.InternalError(c, "Failed deleting user", result.Error.Error())

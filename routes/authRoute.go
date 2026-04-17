@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/Haidarr-h/backend-go/controllers"
-	"github.com/Haidarr-h/backend-go/initializers"
+	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/middleware"
 	"github.com/Haidarr-h/backend-go/repositories"
 	"github.com/Haidarr-h/backend-go/services"
@@ -13,7 +13,7 @@ import (
 
 func RegisterAuthRoutes(rg *gin.RouterGroup) {
 	// 1. Wire the dependencies
-	authRepo := repositories.NewUserRepository(initializers.DB)
+	authRepo := repositories.NewUserRepository(config.DB)
 	authService := services.NewAuthService(authRepo)
 	authController := controllers.NewAuthController(authService)
 

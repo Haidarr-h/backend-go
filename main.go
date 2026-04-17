@@ -6,7 +6,7 @@ import (
 
 	"github.com/Haidarr-h/backend-go/controllers"
 	_ "github.com/Haidarr-h/backend-go/docs"
-	"github.com/Haidarr-h/backend-go/initializers"
+	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -23,9 +23,9 @@ import (
 // @BasePath  /
 
 func init() {
-	initializers.LoadEnvVariables()
-	initializers.ConnectToDB()
-	initializers.SyncDatabase()
+	config.LoadEnvVariables()
+	config.ConnectToDB()
+	config.SyncDatabase()
 }
 
 func main() {
