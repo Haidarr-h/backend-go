@@ -11,15 +11,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterAuthRoutes(rg *gin.RouterGroup) {
+func RegisterAuthRoutes(rg *gin.RouterGroup, cfg *config.Config) {
 	// 1. Wire the dependencies
 	authRepo := repositories.NewUserRepository(config.DB)
-	authService := services.NewAuthService(authRepo)
+	authService := services.NewAuthService(authRepo, cfg)
 	authController := controllers.NewAuthController(authService)
 
 	// 2. Define the routes
 	auth := rg.Group("/auth")
-	auth.Use(middleware.RequireAPIKey())
+	auth.Use(middleware.RequireAPIKey(cfg))
 	auth.Use(middleware.RateLimit(5, time.Minute))
 	{
 		auth.POST("/signup", authController.SignUp)

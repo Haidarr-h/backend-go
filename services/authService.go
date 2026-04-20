@@ -2,9 +2,9 @@ package services
 
 import (
 	"errors"
-	"os"
 	"time"
 
+	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/dto"
 	"github.com/Haidarr-h/backend-go/models"
 	"github.com/Haidarr-h/backend-go/repositories"
@@ -14,10 +14,11 @@ import (
 
 type AuthService struct {
 	authRepo *repositories.UserRepository
+	cfg *config.Config
 }
 
-func NewAuthService(authRepo *repositories.UserRepository) *AuthService {
-	return &AuthService{authRepo: authRepo}
+func NewAuthService(authRepo *repositories.UserRepository, cfg *config.Config) *AuthService {
+	return &AuthService{authRepo: authRepo, cfg: cfg}
 }
 
 // CREATE
@@ -95,7 +96,7 @@ func (s *AuthService) SignIn(req dto.SignInReq) (dto.SignInRes, error) {
 		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
 	})
 
-	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET")))
+	tokenString, err := token.SignedString([]byte(s.cfg.JWTSecret))
 
 	if err != nil {
 		return dto.SignInRes{}, errors.New("Failed to create token")

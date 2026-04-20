@@ -2,14 +2,14 @@ package middleware
 
 import (
 	"net/http"
-	"os"
 	"strings"
 
+	"github.com/Haidarr-h/backend-go/config"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func RequireAuth() gin.HandlerFunc {
+func RequireAuth(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 1. Grab the header
 		authHeader := c.GetHeader("Authorization")
@@ -37,7 +37,7 @@ func RequireAuth() gin.HandlerFunc {
 			if t.Method != jwt.SigningMethodHS256 {
 				return nil, jwt.ErrSignatureInvalid
 			}
-			return []byte(os.Getenv("SECRET")), nil
+			return []byte(cfg.JWTSecret), nil
 		})
 
 		if err != nil || !token.Valid {

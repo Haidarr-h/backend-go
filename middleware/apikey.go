@@ -2,15 +2,15 @@ package middleware
 
 import (
 	"net/http"
-	"os"
 
+	"github.com/Haidarr-h/backend-go/config"
 	"github.com/gin-gonic/gin"
 )
 
-func RequireAPIKey() gin.HandlerFunc {
+func RequireAPIKey(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := c.GetHeader("X-API-KEY")
-		expected := os.Getenv("CLIENT_API_KEY")
+		expected := cfg.ClientAPIKey
 
 		if key == "" || key != expected {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{

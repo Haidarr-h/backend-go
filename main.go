@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/Haidarr-h/backend-go/controllers"
 	_ "github.com/Haidarr-h/backend-go/docs"
@@ -24,13 +23,13 @@ import (
 
 func init() {
 	config.LoadEnvVariables()
-	config.ConnectToDB()
-	config.SyncDatabase()
+	config.InitDB()
 }
 
 func main() {
 	fmt.Println("Web Server started")
-	port := os.Getenv("PORT")
+
+	cfg := config.Load()
 
 	r := gin.Default()
 
@@ -46,7 +45,7 @@ func main() {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.GET("/healthCheck", controllers.HealthCheck)
 
-	routes.RegisterRoutes(r)
+	routes.RegisterRoutes(r, cfg)
 
-	r.Run(":" + port)
+	r.Run(":" + cfg.Port)
 }

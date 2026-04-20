@@ -1,19 +1,20 @@
 package routes
 
 import (
+	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/middleware"
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(r *gin.Engine) {
+func RegisterRoutes(r *gin.Engine, cfg *config.Config) {
 	api := r.Group("/api/v1")
 
 	// PUBLIC ROUTES
-	RegisterAuthRoutes(api)
+	RegisterAuthRoutes(api, cfg)
 
 	// JWT PROTECTED ROUTES
 	protected := api.Group("/")
-	protected.Use(middleware.RequireAuth())
+	protected.Use(middleware.RequireAuth(cfg))
 	{
 		RegisterUserRoutes(protected)
 		RegisterRoutineRoutes(protected)
