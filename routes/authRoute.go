@@ -13,7 +13,7 @@ import (
 
 func RegisterAuthRoutes(rg *gin.RouterGroup, cfg *config.Config) {
 	// 1. Wire the dependencies
-	authRepo := repositories.NewUserRepository(config.DB)
+	authRepo := repositories.NewUserRepository(cfg.DB)
 	authService := services.NewAuthService(authRepo, cfg)
 	authController := controllers.NewAuthController(authService)
 
@@ -24,6 +24,8 @@ func RegisterAuthRoutes(rg *gin.RouterGroup, cfg *config.Config) {
 	{
 		auth.POST("/signup", authController.SignUp)
 		auth.POST("/signin", authController.SignIn)
-		auth.POST("/google/mobile", controllers.GoogleMobileSignIn)
+		auth.POST("/google/mobile", func(c *gin.Context) {
+			controllers.GoogleMobileSignIn(c, cfg)
+		})
 	}
 }

@@ -36,16 +36,16 @@ type ExerciseDelReq struct {
 // @Success      200  {object}  map[string]interface{}
 // @Failure      500  {object}  map[string]interface{}
 // @Router       /api/v1/exercises [get]
-func GetExercises(c *gin.Context) {
+func GetExercises(c *gin.Context, cfg *config.Config) {
 	var exercises []models.Exercise
 
 	// check if there are any exercises
-	if result := config.DB.First(&exercises); result.RowsAffected == 0 {
+	if result := cfg.DB.First(&exercises); result.RowsAffected == 0 {
 		response.OK(c, "No Exercise Found", "")
 		return
 	}
 
-	err := config.DB.Find(&exercises).Error
+	err := cfg.DB.Find(&exercises).Error
 	// 1. Look at the type of exercises (to which table)
 	// 2. fetch all rows from it
 	// 3. Then populate exercises with the result
@@ -73,12 +73,12 @@ func GetExercises(c *gin.Context) {
 // @Success      200  {object}  map[string]interface{}
 // @Failure      500  {object}  map[string]interface{}
 // @Router       /api/v1/exercises/{id} [get]
-func GetExercise(c *gin.Context) {
+func GetExercise(c *gin.Context, cfg *config.Config) {
 	exerciseId := c.Param("id")
 
 	var exercise models.Exercise
 
-	err := config.DB.First(&exercise, exerciseId).Error
+	err := cfg.DB.First(&exercise, exerciseId).Error
 
 	if err != nil {
 
@@ -103,7 +103,7 @@ func GetExercise(c *gin.Context) {
 // @Success      201   {object}  map[string]interface{}
 // @Failure      400   {object}  map[string]interface{}
 // @Router       /api/v1/exercises [post]
-func CreateExercise(c *gin.Context) {
+func CreateExercise(c *gin.Context, cfg *config.Config) {
 	var exerciseBody ExerciseRequest
 
 	// 1. Read the requst body
@@ -114,7 +114,7 @@ func CreateExercise(c *gin.Context) {
 
 	// 2. Check if the same exercise already exist (return error if not found)
 	var existingExercise models.Exercise
-	err := config.DB.Where("name = ?", exerciseBody.Name).First(&existingExercise).Error
+	err := cfg.DB.Where("name = ?", exerciseBody.Name).First(&existingExercise).Error
 
 	if err == nil {
 		response.BadRequest(c, "Name already exist", "Bad Request")
@@ -129,7 +129,7 @@ func CreateExercise(c *gin.Context) {
 		Category:    exerciseBody.Category,
 	}
 
-	result := config.DB.Create(&newExercise)
+	result := cfg.DB.Create(&newExercise)
 
 	if result.Error != nil {
 		response.InternalError(c, "Failed to create exercise", err.Error())
@@ -149,7 +149,7 @@ func CreateExercise(c *gin.Context) {
 // @Success      201   {object}  map[string]interface{}
 // @Failure      400   {object}  map[string]interface{}
 // @Router       /api/v1/exercises [patch]
-func UpdateExercises(c *gin.Context) {
+func UpdateExercises(c *gin.Context, cfg *config.Config) {
 	var updateExercise ExerciseUpdateRequest
 
 	// 1. Read Request body
@@ -179,7 +179,7 @@ func UpdateExercises(c *gin.Context) {
 	}
 
 	// 3. Updates the database
-	err := config.DB.Model(models.Exercise{}).Where("id = ?", updateExercise.Id).Updates(updates).Error
+	err := cfg.DB.Model(models.Exercise{}).Where("id = ?", updateExercise.Id).Updates(updates).Error
 
 	if err != nil {
 		response.InternalError(c, "Failed to update user", err.Error())
@@ -198,7 +198,7 @@ func UpdateExercises(c *gin.Context) {
 // @Success      201   {object}  map[string]interface{}
 // @Failure      400   {object}  map[string]interface{}
 // @Router       /api/v1/exercises [delete]
-func DeleteExercises(c *gin.Context) {
+func DeleteExercises(c *gin.Context, cfg *config.Config) {
 	var deleteExercise ExerciseDelReq
 	var exercise models.Exercise
 
@@ -209,7 +209,7 @@ func DeleteExercises(c *gin.Context) {
 	}
 
 	// 2. Delete
-	result := config.DB.Delete(&exercise, deleteExercise.Id)
+	result := cfg.DB.Delete(&exercise, deleteExercise.Id)
 
 	if result.Error != nil {
 		response.InternalError(c, "Failed deleting user", result.Error.Error())

@@ -20,11 +20,11 @@ type updateReq struct {
 // @Success      200  {object}  map[string]interface{}
 // @Failure      500  {object}  map[string]interface{}
 // @Router       /api/v1/users [get]
-func GetUsers(c *gin.Context) {
+func GetUsers(c *gin.Context, cfg *config.Config) {
 	var users []models.User
 
 	// get all records
-	result := config.DB.Find(&users)
+	result := cfg.DB.Find(&users)
 
 	if result.Error != nil {
 		response.InternalError(c, "Failed to fetch users data", "")
@@ -41,13 +41,13 @@ func GetUsers(c *gin.Context) {
 // @Success      200  {object}  map[string]interface{}
 // @Failure      500  {object}  map[string]interface{}
 // @Router       /api/v1/users/{id} [get]
-func GetUser(c *gin.Context) {
+func GetUser(c *gin.Context, cfg *config.Config) {
 	// 1. Get param data (user id)
 	userId := c.Param("id")
 
 	var user models.User
 
-	if err := config.DB.First(&user, userId).Error; err != nil {
+	if err := cfg.DB.First(&user, userId).Error; err != nil {
 		response.InternalError(c, "Failed to fetch user data", err.Error())
 		return
 	}
@@ -64,7 +64,7 @@ func GetUser(c *gin.Context) {
 // @Success      200  {object}  map[string]interface{}
 // @Failure      500  {object}  map[string]interface{}
 // @Router       /api/v1/users/{id} [patch]
-func UpdateUser(c *gin.Context) {
+func UpdateUser(c *gin.Context, cfg *config.Config) {
 	var req updateReq
 
 	// 1. Parse the body json
@@ -85,7 +85,7 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	// 3. update to database
-	if err := config.DB.Model(models.User{}).Where("id = ?", req.Id).Updates(updates).Error; err != nil {
+	if err := cfg.DB.Model(models.User{}).Where("id = ?", req.Id).Updates(updates).Error; err != nil {
 		response.InternalError(c, "Failed to update user data to database", err.Error())
 		return
 	}
@@ -101,20 +101,20 @@ func UpdateUser(c *gin.Context) {
 // @Success      200  {object}  map[string]interface{}
 // @Failure      500  {object}  map[string]interface{}
 // @Router       /api/v1/users/{id} [delete]
-func DeleteUser(c *gin.Context) {
+func DeleteUser(c *gin.Context, cfg *config.Config) {
 	// 1. get id from param
 	id := c.Param("id")
 
 	user := models.User{}
 
 	// 2. check if user exist
-	if err := config.DB.First(&user, id).Error; err != nil {
+	if err := cfg.DB.First(&user, id).Error; err != nil {
 		response.BadRequest(c, "User not found", err.Error())
 		return
 	}
 
 	// 3. Delete
-	if err := config.DB.Delete(&user, id).Error; err != nil {
+	if err := cfg.DB.Delete(&user, id).Error; err != nil {
 		response.InternalError(c, "Failed to delete user", err.Error())
 		return
 	}

@@ -8,9 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutineRoutes(rg *gin.RouterGroup) {
+func RegisterRoutineRoutes(rg *gin.RouterGroup, cfg *config.Config) {
 	// wire dependencies
-	routineRepo := repositories.NewRoutineRepository(config.DB)
+	routineRepo := repositories.NewRoutineRepository(cfg.DB)
 	routineService := services.NewRoutineService(routineRepo)
 	routineController := controllers.NewRoutineController(routineService)
 

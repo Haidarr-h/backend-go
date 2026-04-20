@@ -39,7 +39,7 @@ type GoogleUserInfo struct {
 // @Failure      401   {object}  map[string]interface{}  "Invalid Google token"
 // @Failure      500   {object}  map[string]interface{}  "Internal server error"
 // @Router       /auth/google/mobile [post]
-func GoogleMobileSignIn(c *gin.Context) {
+func GoogleMobileSignIn(c *gin.Context, cfg *config.Config) {
 	// 1. Get the ID token from Flutter (sdks)
 	var req GoogleTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -57,11 +57,11 @@ func GoogleMobileSignIn(c *gin.Context) {
 
 	// 3. Find or create the user in your DB
 	var user models.User
-	result := config.DB.Where("google_id = ?", googleUser.Sub).First(&user)
+	result := cfg.DB.Where("google_id = ?", googleUser.Sub).First(&user)
 
 	if result.Error == gorm.ErrRecordNotFound {
 		// Check if email already exists
-		emailResult := config.DB.Where("email = ?", googleUser.Email).First(&user)
+		emailResult := cfg.DB.Where("email = ?", googleUser.Email).First(&user)
 
 		switch emailResult.Error {
 		case gorm.ErrRecordNotFound:
@@ -75,7 +75,7 @@ func GoogleMobileSignIn(c *gin.Context) {
 				Username: baseUsername,
 			}
 
-			if err := config.DB.Create(&user).Error; err != nil {
+			if err := cfg.DB.Create(&user).Error; err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": "failed to create user",
 				})
@@ -83,7 +83,7 @@ func GoogleMobileSignIn(c *gin.Context) {
 			}
 		case nil:
 			// Email already exist (signed up manually before) - Link google ID
-			if err := config.DB.Model(&user).Updates(map[string]interface{}{
+			if err := cfg.DB.Model(&user).Updates(map[string]interface{}{
 				"google_id": googleUser.Sub,
 				"picture":   googleUser.Picture,
 			}).Error; err != nil {

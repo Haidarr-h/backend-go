@@ -1,6 +1,10 @@
 package config
 
-import "os"
+import (
+	"os"
+
+	"gorm.io/gorm"
+)
 
 type Config struct {
 	Port           string
@@ -8,15 +12,21 @@ type Config struct {
 	JWTSecret      string
 	ClientAPIKey   string
 	GoogleClientID string
+	DB             *gorm.DB
 }
 
 func Load() *Config {
+	LoadEnvVariables()
+
+	db := InitDB()
+
 	return &Config{
 		Port:           getEnv("PORT", "8080"),
 		DBUrl:          getEnv("DB", ""),
 		JWTSecret:      getEnv("SECRET", ""),
 		ClientAPIKey:   getEnv("CLIENT_API_KEY", ""),
 		GoogleClientID: getEnv("CLIENGOOGLE_CLIENT_IDT_API_KEY", ""),
+		DB:             db,
 	}
 }
 
