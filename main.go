@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
+	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/controllers"
 	_ "github.com/Haidarr-h/backend-go/docs"
-	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -37,7 +37,7 @@ func main() {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders: []string{"Origin", "Content-Type", "Authorization"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Authorization", "X-Api-Key"},
 		// AllowCredentials: true
 	}))
 
