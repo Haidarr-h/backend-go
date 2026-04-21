@@ -57,7 +57,16 @@ jobs:
 
       - name: Update Apidog Collection
         run: |
-          sleep 10
+          echo "Waiting for server to be ready..."
+          for i in {1..12}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api-staging.liftlogs.my.id/swagger/doc.json)
+            if [ "$STATUS" = "200" ]; then
+              echo "Server is ready!"
+              break
+            fi
+            echo "Attempt $i: server not ready (status $STATUS), retrying in 10s..."
+            sleep 10
+          done
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
             "https://api.apidog.com/v1/projects/${{ secrets.APIDOG_PROJECT_ID }}/import-openapi?locale=en-US" \
             -H "X-Apidog-Api-Version: 2024-03-28" \
