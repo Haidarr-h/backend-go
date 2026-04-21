@@ -99,20 +99,33 @@ func GoogleMobileSignIn(c *gin.Context, cfg *config.Config) {
 		}
 	}
 
-	// 4. Issue your own JWT
+	// 4. create refresh token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": fmt.Sprintf("%v", user.ID),
-		"exp": time.Now().Add(time.Hour * 24 * 7).Unix(),
+		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
 	})
 
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	tokenString, err := token.SignedString([]byte(os.Getenv("REFRESH_SECRET")))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create token"})
+		return
+	}
+
+	// 5. create access token
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": fmt.Sprintf("%v", user.ID),
+		"exp": time.Now().Add(time.Hour * 12).Unix(),
+	})
+
+	accessTokenString, err := accessToken.SignedString([]byte(os.Getenv("SECRET")))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create token"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"token": tokenString,
+		"refresh_token": tokenString,
+		"access_name": accessTokenString,
 		"user": gin.H{
 			"id":      user.ID,
 			"email":   user.Email,

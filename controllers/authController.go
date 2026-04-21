@@ -26,7 +26,7 @@ func NewAuthController(authService *services.AuthService) *AuthController {
 // @Failure      400   {object}  map[string]interface{}
 // @Router       /api/v1/auth/signup [post]
 func (rc *AuthController) SignUp(c *gin.Context) {
-	
+
 	// 1. Parse the body request
 	var body dto.SignUpRequest
 
@@ -39,7 +39,12 @@ func (rc *AuthController) SignUp(c *gin.Context) {
 	respon, err := rc.authService.SignUp(body)
 
 	if err != nil {
-		response.InternalError(c, "failed to perform auth service", err.Error())
+		msg := err.Error()
+		if msg == "email already exist" || msg == "username already exist" {
+			response.BadRequest(c, msg, nil)
+			return
+		}
+		response.InternalError(c, "failed to perform auth service", msg)
 		return
 	}
 
