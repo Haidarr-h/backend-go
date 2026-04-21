@@ -15,6 +15,44 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/auth/refresh": {
+            "post": {
+                "description": "refresh access token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "refresh token",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RefreshTokenReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RefreshTokenRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {}
+                    }
+                }
+            }
+        },
         "/api/v1/auth/signin": {
             "post": {
                 "description": "Authenticate user and return a JWT token",
@@ -35,7 +73,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.AuthRequest"
+                            "$ref": "#/definitions/dto.SignInReq"
                         }
                     }
                 ],
@@ -43,14 +81,48 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/controllers.AuthResponse"
+                            "$ref": "#/definitions/dto.SignInRes"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {}
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/signout": {
+            "post": {
+                "description": "signout to delete the refresh token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "signout",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.ErrorResponse"
+                            "$ref": "#/definitions/dto.RefreshTokenReq"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {}
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {}
                     }
                 }
             }
@@ -583,37 +655,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "controllers.AuthRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string",
-                    "example": "haidar@gmail.com"
-                },
-                "password": {
-                    "type": "string",
-                    "example": "haidarpassword"
-                }
-            }
-        },
-        "controllers.AuthResponse": {
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string",
-                    "example": "xxxxxxxxxxxxxxx..."
-                }
-            }
-        },
-        "controllers.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string",
-                    "example": "Invalid Email or Password"
-                }
-            }
-        },
         "controllers.ExerciseDelReq": {
             "type": "object",
             "required": [
@@ -698,6 +739,31 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.RefreshTokenReq": {
+            "type": "object",
+            "required": [
+                "refreshToken"
+            ],
+            "properties": {
+                "refreshToken": {
+                    "type": "string",
+                    "example": "yyyyy..."
+                }
+            }
+        },
+        "dto.RefreshTokenRes": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string",
+                    "example": "xxx..."
+                },
+                "refreshToken": {
+                    "type": "string",
+                    "example": "yyyyyy"
+                }
+            }
+        },
         "dto.SignInReq": {
             "type": "object",
             "properties": {
@@ -714,9 +780,13 @@ const docTemplate = `{
         "dto.SignInRes": {
             "type": "object",
             "properties": {
-                "token": {
+                "accessToken": {
                     "type": "string",
-                    "example": "xxxxxxxx..."
+                    "example": "xxxxx"
+                },
+                "refreshToken": {
+                    "type": "string",
+                    "example": "yyyyyy"
                 }
             }
         },

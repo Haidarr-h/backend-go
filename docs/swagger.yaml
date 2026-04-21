@@ -1,26 +1,5 @@
 basePath: /
 definitions:
-  controllers.AuthRequest:
-    properties:
-      email:
-        example: haidar@gmail.com
-        type: string
-      password:
-        example: haidarpassword
-        type: string
-    type: object
-  controllers.AuthResponse:
-    properties:
-      token:
-        example: xxxxxxxxxxxxxxx...
-        type: string
-    type: object
-  controllers.ErrorResponse:
-    properties:
-      error:
-        example: Invalid Email or Password
-        type: string
-    type: object
   controllers.ExerciseDelReq:
     properties:
       id:
@@ -76,6 +55,23 @@ definitions:
     required:
     - id
     type: object
+  dto.RefreshTokenReq:
+    properties:
+      refreshToken:
+        example: yyyyy...
+        type: string
+    required:
+    - refreshToken
+    type: object
+  dto.RefreshTokenRes:
+    properties:
+      accessToken:
+        example: xxx...
+        type: string
+      refreshToken:
+        example: yyyyyy
+        type: string
+    type: object
   dto.SignInReq:
     properties:
       email:
@@ -87,8 +83,11 @@ definitions:
     type: object
   dto.SignInRes:
     properties:
-      token:
-        example: xxxxxxxx...
+      accessToken:
+        example: xxxxx
+        type: string
+      refreshToken:
+        example: yyyyyy
         type: string
     type: object
   dto.SignUpRequest:
@@ -124,6 +123,31 @@ info:
   title: IronLog Backend Go API
   version: "1.0"
 paths:
+  /api/v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: refresh access token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RefreshTokenRes'
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: refresh token
+      tags:
+      - auth
   /api/v1/auth/signin:
     post:
       consumes:
@@ -135,19 +159,42 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/controllers.AuthRequest'
+          $ref: '#/definitions/dto.SignInReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/controllers.AuthResponse'
+            $ref: '#/definitions/dto.SignInRes'
         "400":
           description: Bad Request
-          schema:
-            $ref: '#/definitions/controllers.ErrorResponse'
+          schema: {}
       summary: Login a user
+      tags:
+      - auth
+  /api/v1/auth/signout:
+    post:
+      consumes:
+      - application/json
+      description: signout to delete the refresh token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: signout
       tags:
       - auth
   /api/v1/auth/signup:

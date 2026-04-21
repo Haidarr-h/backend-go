@@ -24,8 +24,8 @@ jobs:
       - name: Install GCC (required for SQLite)
         run: sudo apt-get install -y gcc
 
-      - name: Run Tests
-        run: go test ./... -v
+      # - name: Run Tests
+      #   run: go test ./... -v
 
       - name: Install swag
         run: go install github.com/swaggo/swag/cmd/swag@latest

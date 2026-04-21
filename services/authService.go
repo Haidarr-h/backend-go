@@ -13,15 +13,16 @@ import (
 )
 
 type AuthService struct {
-	authRepo *repositories.UserRepository
-	cfg *config.Config
+	authRepo    *repositories.UserRepository
+	refreshRepo *repositories.RefreshTokenRepository
+	cfg         *config.Config
 }
 
-func NewAuthService(authRepo *repositories.UserRepository, cfg *config.Config) *AuthService {
-	return &AuthService{authRepo: authRepo, cfg: cfg}
+func NewAuthService(authRepo *repositories.UserRepository, cfg *config.Config, refreshRepo *repositories.RefreshTokenRepository) *AuthService {
+	return &AuthService{authRepo: authRepo, cfg: cfg, refreshRepo: refreshRepo}
 }
 
-// CREATE
+// SIGN UP
 func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) {
 
 	// 1. Check if user email already exist
@@ -36,7 +37,7 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 		return dto.SignUpResponse{}, errors.New("username already exist")
 	}
 
-	// 3. Hash the passowrd 
+	// 3. Hash the passowrd
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 10)
 	if err != nil {
 		return dto.SignUpResponse{}, err
@@ -45,7 +46,7 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 	// 4. Create the user model
 	hashedPassword := string(hash)
 	user := models.User{
-		Email: req.Email,
+		Email:    req.Email,
 		FullName: req.FullName,
 		Username: req.Username,
 		Password: &hashedPassword,
@@ -58,7 +59,7 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 	}
 
 	response := dto.SignUpResponse{
-		ID: user_result.ID,
+		ID:       user_result.ID,
 		FullName: user_result.FullName,
 		Username: user_result.Username,
 	}
@@ -66,11 +67,12 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 	return response, nil
 }
 
+// SIGN IN
 func (s *AuthService) SignIn(req dto.SignInReq) (dto.SignInRes, error) {
 
 	// 1. check if user exist
 	user, err := s.authRepo.FindByEmail(req.Email)
-	
+
 	if err != nil {
 		return dto.SignInRes{}, err
 	}
@@ -90,18 +92,117 @@ func (s *AuthService) SignIn(req dto.SignInReq) (dto.SignInRes, error) {
 		return dto.SignInRes{}, errors.New("Invalid email or password")
 	}
 
-	// 3. Create token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.ID,
-		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
-	})
+	// 3. Create refresh token
+	refreshTokenString, refreshErr := s.CreateToken(24*30, user.ID, true)
 
-	tokenString, err := token.SignedString([]byte(s.cfg.JWTSecret))
-
-	if err != nil {
+	if refreshErr != nil {
 		return dto.SignInRes{}, errors.New("Failed to create token")
 	}
 
-	// 4. send token and success
-	return dto.SignInRes{Token: tokenString}, nil
+	// 4. create refresh token in table
+	refreshTokenModel := models.RefreshToken{
+		UserID:    user.ID,
+		Token:     refreshTokenString,
+		ExpiresAt: time.Now().Add(time.Hour * 24 * 30),
+	}
+
+	if _, createErr := s.refreshRepo.Create(&refreshTokenModel); createErr != nil {
+		return dto.SignInRes{}, createErr
+	}
+
+	// 5. create the access token
+	accessTokenString, accessErr := s.CreateToken(12, user.ID, false)
+
+	if accessErr != nil {
+		return dto.SignInRes{}, errors.New("Failed to create token")
+	}
+
+	// 6. send token and success
+	return dto.SignInRes{RefreshToken: refreshTokenString, AccessToken: accessTokenString}, nil
+}
+
+// REFRESH TOKEN
+func (s *AuthService) Refresh(req dto.RefreshTokenReq) (dto.RefreshTokenRes, error) {
+
+	// 1. find the refresh token and check if any
+	result, err := s.refreshRepo.FindByToken(req.RefreshToken)
+
+	// 2. error checks
+	if err != nil {
+		return dto.RefreshTokenRes{}, err
+	}
+
+	if result.ExpiresAt.Before(time.Now()) {
+		return dto.RefreshTokenRes{}, errors.New("refresh token is expired")
+	}
+
+	// 3. create a new refresh token
+	refreshTokenString, refreshErr := s.CreateToken(24*30, result.UserID, true)
+
+	if refreshErr != nil {
+		return dto.RefreshTokenRes{}, errors.New("Failed to create token")
+	}
+
+	// 4. update the NEW refresh token in table
+	refreshTokenModel := models.RefreshToken{
+		UserID:    result.UserID,
+		Token:     refreshTokenString,
+		ExpiresAt: time.Now().Add(time.Hour * 24 * 30),
+	}
+
+	refreshTokenModel.ID = result.ID
+
+	if _, updateErr := s.refreshRepo.Update(&refreshTokenModel); updateErr != nil {
+		return dto.RefreshTokenRes{}, updateErr
+	}
+
+	// 5. create the access token
+	accessTokenString, accessErr := s.CreateToken(12, result.UserID, false)
+
+	if accessErr != nil {
+		return dto.RefreshTokenRes{}, errors.New("Failed to create token")
+	}
+
+	return dto.RefreshTokenRes{AccessToken: accessTokenString, RefreshToken: refreshTokenString}, nil
+}
+
+// DELETE
+func (s *AuthService) DeleteToken(req dto.RefreshTokenReq) error {
+
+	// 1. Delete it
+	if err := s.refreshRepo.DeleteByToken(req.RefreshToken); err != nil {
+		return err
+	}
+
+	return nil
+} 
+
+// HELPER FUNCTION
+func (s *AuthService) CreateToken(hour int, userID uint, isRefresh bool) (string, error) {
+
+	// 1. convert the hour to time.duration
+	duration := time.Duration(hour) * time.Hour
+
+	// 2. Create the token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": userID,
+		"exp": time.Now().Add(duration).Unix(),
+	})
+
+	// 3. secret adjustments
+	var secret = []byte(s.cfg.JWTSecret)
+	
+	if isRefresh {
+		secret = []byte(s.cfg.RefreshSecret)
+	}
+	
+	// 3. signed the token
+	tokenString, err := token.SignedString(secret)
+
+	// 4. error checks
+	if err != nil {
+		return "", errors.New("Failed to create token")
+	}
+
+	return tokenString, nil
 }

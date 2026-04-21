@@ -13,6 +13,7 @@ type Config struct {
 	ClientAPIKey   string
 	GoogleClientID string
 	DB             *gorm.DB
+	RefreshSecret  string
 }
 
 func Load() *Config {
@@ -26,6 +27,7 @@ func Load() *Config {
 		JWTSecret:      getEnv("SECRET", ""),
 		ClientAPIKey:   getEnv("CLIENT_API_KEY", ""),
 		GoogleClientID: getEnv("CLIENGOOGLE_CLIENT_IDT_API_KEY", ""),
+		RefreshSecret:  getEnv("REFRESH_SECRET", ""),
 		DB:             db,
 	}
 }
