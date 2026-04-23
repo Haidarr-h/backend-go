@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/Haidarr-h/backend-go/dto"
+	"github.com/Haidarr-h/backend-go/pkg/logger"
 	"github.com/Haidarr-h/backend-go/pkg/response"
 	"github.com/Haidarr-h/backend-go/pkg/validation"
 	"github.com/Haidarr-h/backend-go/services"
@@ -19,14 +20,17 @@ func NewAuthController(authService *services.AuthService) *AuthController {
 }
 
 // Signup godoc
-// @Summary      Register a new user
+// @Summary      Sign Up
 // @Description  Create a new user account with email and password
 // @Tags         auth
 // @Accept       json
 // @Produce      json
 // @Param        body  body      dto.SignUpRequest    true  "Signup credentials"
-// @Success      201   {object}  map[string]interface{}
-// @Failure      400   {object}  map[string]interface{}
+// @Security     ApiKeyAuth
+// @Success      201   {object}  dto.SignUpResponse
+// @Failure      400   {object}  dto.ErrorRes400
+// @Failure      409   {object}  dto.ErrorRes400
+// @Failure      500   {object}  dto.ErrorRes500
 // @Router       /api/v1/auth/signup [post]
 func (rc *AuthController) SignUp(c *gin.Context) {
 
@@ -34,6 +38,7 @@ func (rc *AuthController) SignUp(c *gin.Context) {
 	var body dto.SignUpRequest
 
 	if err := c.ShouldBindJSON(&body); err != nil {
+		logger.Log.Debug("wrong body request", "body", body)
 		response.BadRequest(c, "Bad request", validation.ParseValidationErrors(err))
 		return
 	}
@@ -56,14 +61,17 @@ func (rc *AuthController) SignUp(c *gin.Context) {
 }
 
 // Login godoc
-// @Summary      Login a user
+// @Summary      Sign in
 // @Description  Authenticate user and return a JWT token
 // @Tags         auth
 // @Accept       json
 // @Produce      json
 // @Param        body  body      dto.SignInReq   true  "Login credentials"
+// @Security     ApiKeyAuth
 // @Success      200   {object}  dto.SignInRes
-// @Failure      400   {object}  any
+// @Failure      400   {object}  dto.ErrorRes400
+// @Failure      401   {object}  dto.ErrorRes400
+// @Failure      500   {object}  dto.ErrorRes500
 // @Router       /api/v1/auth/signin [post]
 func (rc *AuthController) SignIn(c *gin.Context) {
 
@@ -71,7 +79,7 @@ func (rc *AuthController) SignIn(c *gin.Context) {
 	var body dto.SignInReq
 
 	if err := c.ShouldBindJSON(&body); err != nil {
-		response.BadRequest(c, "bad request", err.Error())
+		response.BadRequest(c, "bad request", validation.ParseValidationErrors(err))
 		return
 	}
 
@@ -107,12 +115,13 @@ func (rc *AuthController) SignIn(c *gin.Context) {
 }
 
 // Refresh godoc
-// @Summary      refresh token
+// @Summary      Refresh Token
 // @Description  refresh access token
 // @Tags         auth
 // @Accept       json
 // @Produce      json
 // @Param        body  body      dto.RefreshTokenReq   true  "Login credentials"
+// @Security     ApiKeyAuth
 // @Success      200   {object}  dto.RefreshTokenRes
 // @Failure      400   {object}  any
 // @Router       /api/v1/auth/refresh [post]
@@ -137,12 +146,13 @@ func (rc *AuthController) Refresh(c *gin.Context) {
 }
 
 // SignOut godoc
-// @Summary      signout
+// @Summary      Sign Out
 // @Description  signout to delete the refresh token
 // @Tags         auth
 // @Accept       json
 // @Produce      json
 // @Param        body  body      dto.RefreshTokenReq   true  "Login credentials"
+// @Security     ApiKeyAuth
 // @Success      200   {object}  any
 // @Failure      400   {object}  any
 // @Router       /api/v1/auth/signout [post]

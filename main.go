@@ -22,6 +22,14 @@ import (
 // @schemes   https
 // @BasePath  /
 
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name X-API-KEY
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+
 func init() {
 	config.LoadEnvVariables()
 	config.InitDB()

@@ -14,15 +14,15 @@ func ParseValidationErrors(err error) map[string]string {
 
 		switch e.Tag() {
 		case "required":
-			fields[field] = field + " is required"
+			fields[field] = field + " field is required"
 		case "email":
 			fields[field] = "invalid email format"
 		case "min":
-			fields[field] = field + " must be atleast " + e.Param() + " characters"
+			fields[field] = field + " field must be atleast " + e.Param() + " characters"
 		case "max":
-			fields[field] = field + " must be at most " + e.Param() + " characters"
+			fields[field] = field + " field must be at most " + e.Param() + " characters"
 		default:
-			fields[field] = field + " is invalid"
+			fields[field] = field + " field is invalid"
 		}
 
 	}

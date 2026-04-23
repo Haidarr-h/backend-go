@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/api/v1/auth/refresh": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "refresh access token",
                 "consumes": [
                     "application/json"
@@ -27,7 +32,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "refresh token",
+                "summary": "Refresh Token",
                 "parameters": [
                     {
                         "description": "Login credentials",
@@ -55,6 +60,11 @@ const docTemplate = `{
         },
         "/api/v1/auth/signin": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Authenticate user and return a JWT token",
                 "consumes": [
                     "application/json"
@@ -65,7 +75,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Login a user",
+                "summary": "Sign in",
                 "parameters": [
                     {
                         "description": "Login credentials",
@@ -86,13 +96,32 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {}
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorRes400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorRes400"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorRes500"
+                        }
                     }
                 }
             }
         },
         "/api/v1/auth/signout": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "signout to delete the refresh token",
                 "consumes": [
                     "application/json"
@@ -103,7 +132,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "signout",
+                "summary": "Sign Out",
                 "parameters": [
                     {
                         "description": "Login credentials",
@@ -129,6 +158,11 @@ const docTemplate = `{
         },
         "/api/v1/auth/signup": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Create a new user account with email and password",
                 "consumes": [
                     "application/json"
@@ -139,7 +173,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Register a new user",
+                "summary": "Sign Up",
                 "parameters": [
                     {
                         "description": "Signup credentials",
@@ -155,15 +189,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.SignUpResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.ErrorRes400"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorRes400"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorRes500"
                         }
                     }
                 }
@@ -739,6 +783,40 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ErrorRes400": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "bad request"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "failed to process..."
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
+        "dto.ErrorRes500": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "internal server error"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "failed to process..."
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
         "dto.RefreshTokenReq": {
             "type": "object",
             "required": [
@@ -766,14 +844,22 @@ const docTemplate = `{
         },
         "dto.SignInReq": {
             "type": "object",
+            "required": [
+                "identifier",
+                "password"
+            ],
             "properties": {
-                "email": {
+                "identifier": {
                     "type": "string",
+                    "maxLength": 24,
+                    "minLength": 3,
                     "example": "haidar@gmail.com"
                 },
                 "password": {
                     "type": "string",
-                    "example": "haidarpassword"
+                    "maxLength": 24,
+                    "minLength": 8,
+                    "example": "password123"
                 }
             }
         },
@@ -794,7 +880,8 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "email",
-                "fullName",
+                "firstName",
+                "lastName",
                 "password",
                 "username"
             ],
@@ -803,17 +890,23 @@ const docTemplate = `{
                     "type": "string",
                     "example": "haidar@gmail.com"
                 },
-                "fullName": {
+                "firstName": {
                     "type": "string",
                     "maxLength": 24,
                     "minLength": 3,
-                    "example": "Haidar Sebastian"
+                    "example": "Haidar"
+                },
+                "lastName": {
+                    "type": "string",
+                    "maxLength": 24,
+                    "minLength": 3,
+                    "example": "Hanif"
                 },
                 "password": {
                     "type": "string",
                     "maxLength": 24,
                     "minLength": 8,
-                    "example": "haidarpassword"
+                    "example": "password123"
                 },
                 "username": {
                     "type": "string",
@@ -822,6 +915,35 @@ const docTemplate = `{
                     "example": "haidarIron"
                 }
             }
+        },
+        "dto.SignUpResponse": {
+            "type": "object",
+            "properties": {
+                "firstName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "X-API-KEY",
+            "in": "header"
+        },
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

@@ -69,9 +69,10 @@ func GoogleMobileSignIn(c *gin.Context, cfg *config.Config) {
 			baseUsername := strings.Split(googleUser.Email, "@")[0]
 			user = models.User{
 				Email:    googleUser.Email,
-				FullName: googleUser.Name,
-				GoogleID: googleUser.Sub,
-				Picture:  googleUser.Picture,
+				FirstName: googleUser.Name,
+				LastName: googleUser.Name,
+				GoogleID: &googleUser.Sub,
+				Picture:  &googleUser.Picture,
 				Username: baseUsername,
 			}
 
@@ -129,7 +130,7 @@ func GoogleMobileSignIn(c *gin.Context, cfg *config.Config) {
 		"user": gin.H{
 			"id":      user.ID,
 			"email":   user.Email,
-			"name":    user.FullName,
+			"name":    user.FirstName,
 			"picture": user.Picture,
 		},
 	})

@@ -4,11 +4,12 @@ import "gorm.io/gorm"
 
 type User struct {
 	gorm.Model
-	Email    string `gorm:"unique"`
-	FullName string
-	Username string  `gorm:"unique"`
-	GoogleID string  `gorm:"default:null" json:"google_id,omitempty"`
-	Picture  string  `json:"picture,omitempty"`
-	Password *string `json:"password,omitempty"`
-	Routines []Routine
+	Email     string  `gorm:"uniqueIndex;not null"`
+	FirstName string  `gorm:"not null"`
+	LastName  string  `gorm:"not null"`
+	Username  string  `gorm:"uniqueIndex;not null"`
+	GoogleID  *string `gorm:"default:null"`
+	Picture   *string
+	Password  *string
+	Routines  []Routine
 }

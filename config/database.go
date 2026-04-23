@@ -14,7 +14,7 @@ func InitDB() *gorm.DB {
 	dsn := os.Getenv("DB")
 
 	db, err := gorm.Open(postgres.New(postgres.Config{
-		DSN: dsn,
+		DSN:                  dsn,
 		PreferSimpleProtocol: true,
 	}), &gorm.Config{})
 
@@ -24,10 +24,12 @@ func InitDB() *gorm.DB {
 
 	fmt.Println("Database connection success")
 
-	if err = db.AutoMigrate(&models.User{}, &models.Exercise{}, &models.Routine{}, &models.RoutineExercises{}, &models.RefreshToken{}); err != nil {
-		fmt.Println("Auto migration error:", err)
-	} else {
-		fmt.Println("Auto migration success:")
+	if os.Getenv("AUTO_MIGRATE") == "true" {
+		if err = db.AutoMigrate(&models.User{}, &models.Exercise{}, &models.Routine{}, &models.RoutineExercises{}, &models.RefreshToken{}); err != nil {
+			fmt.Println("Auto migration error:", err)
+		} else {
+			fmt.Println("Auto migration success:")
+		}
 	}
 
 	return db

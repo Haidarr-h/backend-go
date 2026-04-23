@@ -7,6 +7,7 @@ import (
 	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/dto"
 	"github.com/Haidarr-h/backend-go/models"
+	"github.com/Haidarr-h/backend-go/pkg/utils"
 	"github.com/Haidarr-h/backend-go/repositories"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -29,12 +30,16 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 	_, emailErr := s.authRepo.FindByEmail(req.Email)
 	if emailErr == nil {
 		return dto.SignUpResponse{}, ErrEmailUsernameExists
+	} else if !errors.Is(emailErr, repositories.ErrUserNotFound) {
+		return dto.SignUpResponse{}, emailErr
 	}
 
 	// 2. Check if username already exist
 	_, usernameErr := s.authRepo.FindByUsername(req.Username)
 	if usernameErr == nil {
 		return dto.SignUpResponse{}, ErrEmailUsernameExists
+	} else if !errors.Is(usernameErr, repositories.ErrUserNotFound) {
+		return dto.SignUpResponse{}, usernameErr
 	}
 
 	// 3. Hash the passowrd
@@ -46,10 +51,11 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 	// 4. Create the user model
 	hashedPassword := string(hash)
 	user := models.User{
-		Email:    req.Email,
-		FullName: req.FullName,
-		Username: req.Username,
-		Password: &hashedPassword,
+		Email:     req.Email,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Username:  req.Username,
+		Password:  &hashedPassword,
 	}
 
 	// 5. create the user
@@ -59,9 +65,10 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 	}
 
 	response := dto.SignUpResponse{
-		ID:       user_result.ID,
-		FullName: user_result.FullName,
-		Username: user_result.Username,
+		ID:        user_result.ID,
+		FirstName: user_result.FirstName,
+		LastName:  user_result.LastName,
+		Username:  user_result.Username,
 	}
 
 	return response, nil
@@ -70,9 +77,20 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 // SIGN IN
 func (s *AuthService) SignIn(req dto.SignInReq) (dto.SignInRes, error) {
 
-	// 1. check if user exist
-	user, err := s.authRepo.FindByEmail(req.Email)
+	// 1. check sign in by email or username
+	isEmail := utils.IsEmail(req.Identifier)
 
+	var user models.User
+	var err error
+
+	// 2. check if user exist
+	if isEmail {
+		user, err = s.authRepo.FindByEmail(req.Identifier)
+	} else {
+		user, err = s.authRepo.FindByUsername(req.Identifier)
+	}
+
+	// 3. Error checks
 	if err != nil {
 
 		if errors.Is(err, repositories.ErrUserNotFound) {
@@ -89,19 +107,19 @@ func (s *AuthService) SignIn(req dto.SignInReq) (dto.SignInRes, error) {
 		return dto.SignInRes{}, ErrUserGoogleSignIn
 	}
 
-	// 2. Make sure password match
+	// 4. Make sure password match
 	if passwordErr := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(req.Password)); passwordErr != nil {
 		return dto.SignInRes{}, ErrInvalidCredentials
 	}
 
-	// 3. Create refresh token
+	// 5. Create refresh token
 	refreshTokenString, refreshErr := s.CreateToken(24*30, user.ID, true)
 
 	if refreshErr != nil {
 		return dto.SignInRes{}, ErrFailedCreateToken
 	}
 
-	// 4. create refresh token in table
+	// 6. create refresh token in table
 	refreshTokenModel := models.RefreshToken{
 		UserID:    user.ID,
 		Token:     refreshTokenString,
@@ -112,14 +130,14 @@ func (s *AuthService) SignIn(req dto.SignInReq) (dto.SignInRes, error) {
 		return dto.SignInRes{}, createErr
 	}
 
-	// 5. create the access token
+	// 7. create the access token
 	accessTokenString, accessErr := s.CreateToken(12, user.ID, false)
 
 	if accessErr != nil {
 		return dto.SignInRes{}, ErrFailedCreateToken
 	}
 
-	// 6. send token and success
+	// 8. send token and success
 	return dto.SignInRes{RefreshToken: refreshTokenString, AccessToken: accessTokenString}, nil
 }
 
@@ -142,7 +160,7 @@ func (s *AuthService) Refresh(req dto.RefreshTokenReq) (dto.RefreshTokenRes, err
 	refreshTokenString, refreshErr := s.CreateToken(24*30, result.UserID, true)
 
 	if refreshErr != nil {
-		return dto.RefreshTokenRes{}, errors.New("Failed to create token")
+		return dto.RefreshTokenRes{}, ErrFailedCreateToken
 	}
 
 	// 4. update the NEW refresh token in table
@@ -162,7 +180,7 @@ func (s *AuthService) Refresh(req dto.RefreshTokenReq) (dto.RefreshTokenRes, err
 	accessTokenString, accessErr := s.CreateToken(12, result.UserID, false)
 
 	if accessErr != nil {
-		return dto.RefreshTokenRes{}, errors.New("Failed to create token")
+		return dto.RefreshTokenRes{}, ErrFailedCreateToken
 	}
 
 	return dto.RefreshTokenRes{AccessToken: accessTokenString, RefreshToken: refreshTokenString}, nil
