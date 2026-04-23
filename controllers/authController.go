@@ -1,8 +1,11 @@
 package controllers
 
 import (
+	"errors"
+
 	"github.com/Haidarr-h/backend-go/dto"
 	"github.com/Haidarr-h/backend-go/pkg/response"
+	"github.com/Haidarr-h/backend-go/pkg/validation"
 	"github.com/Haidarr-h/backend-go/services"
 	"github.com/gin-gonic/gin"
 )
@@ -31,25 +34,25 @@ func (rc *AuthController) SignUp(c *gin.Context) {
 	var body dto.SignUpRequest
 
 	if err := c.ShouldBindJSON(&body); err != nil {
-		response.BadRequest(c, "Bad request", err.Error())
+		response.BadRequest(c, "Bad request", validation.ParseValidationErrors(err))
 		return
 	}
 
 	// 2. Pass to the service
-	respon, err := rc.authService.SignUp(body)
+	result, err := rc.authService.SignUp(body)
 
 	if err != nil {
-		msg := err.Error()
-		if msg == "email already exist" || msg == "username already exist" {
-			response.BadRequest(c, msg, nil)
+		if errors.Is(err, services.ErrEmailUsernameExists) {
+			response.Conflict(c, "failed to sign up", err.Error())
 			return
 		}
-		response.InternalError(c, "failed to perform auth service", msg)
+
+		response.InternalError(c, "failed to sign up", err.Error())
 		return
 	}
 
 	// 3. Success
-	response.OK(c, "Succesfully signed up", respon)
+	response.OK(c, "sign up successful", result)
 }
 
 // Login godoc
@@ -68,7 +71,7 @@ func (rc *AuthController) SignIn(c *gin.Context) {
 	var body dto.SignInReq
 
 	if err := c.ShouldBindJSON(&body); err != nil {
-		response.BadRequest(c, "Bad request", err.Error())
+		response.BadRequest(c, "bad request", err.Error())
 		return
 	}
 
@@ -76,12 +79,31 @@ func (rc *AuthController) SignIn(c *gin.Context) {
 	token, err := rc.authService.SignIn(body)
 
 	if err != nil {
+
+		// not found or wrong creds
+		if errors.Is(err, services.ErrInvalidCredentials) {
+			response.Unauthorized(c, "invalid credentials")
+			return
+		}
+
+		// sign in with different method (ex: google)
+		if errors.Is(err, services.ErrUserGoogleSignIn) {
+			response.BadRequest(c, "failed to sign in", err.Error())
+			return
+		}
+
+		// failed to create token
+		if errors.Is(err, services.ErrFailedCreateToken) {
+			response.InternalError(c, "failed to sign in", err.Error())
+			return
+		}
+
 		response.InternalError(c, "failed to perform login service", err.Error())
 		return
 	}
 
 	// 3. return the token
-	response.OK(c, "Sign In Successful", token)
+	response.OK(c, "sign in successful", token)
 }
 
 // Refresh godoc

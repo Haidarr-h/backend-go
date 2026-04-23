@@ -145,7 +145,7 @@ func (rc *RoutineController) DeleteRoutine(c *gin.Context) {
 	// 3. call the service routine
 	errRepo := rc.routineService.DeleteRoutine(uint(routineId), userId)
 	if errRepo != nil {
-		response.InternalError(c, "Failed to delete routien", errRepo)
+		response.InternalError(c, "Failed to delete routien", errRepo.Error())
 		return
 	}
 

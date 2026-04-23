@@ -30,7 +30,7 @@ func (r *UserRepository) FindByEmail(email string) (models.User, error) {
 	}
 
 	if result.RowsAffected == 0 {
-		return models.User{}, errors.New("user not found")
+		return models.User{}, ErrUserNotFound
 	}
 
 	// 3. return if found

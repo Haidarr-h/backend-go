@@ -29,7 +29,7 @@ func (r *RefreshTokenRepository) Create(refreshToken *models.RefreshToken) (*mod
 	}
 
 	if refreshToken.ID == 0 {
-		return nil, errors.New("failed to generate refresh token")
+		return nil, ErrGenerateToken
 	}
 
 	// 3. Result

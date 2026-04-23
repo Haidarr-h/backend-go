@@ -28,13 +28,13 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 	// 1. Check if user email already exist
 	_, emailErr := s.authRepo.FindByEmail(req.Email)
 	if emailErr == nil {
-		return dto.SignUpResponse{}, errors.New("email already exist")
+		return dto.SignUpResponse{}, ErrEmailUsernameExists
 	}
 
 	// 2. Check if username already exist
 	_, usernameErr := s.authRepo.FindByUsername(req.Username)
 	if usernameErr == nil {
-		return dto.SignUpResponse{}, errors.New("username already exist")
+		return dto.SignUpResponse{}, ErrEmailUsernameExists
 	}
 
 	// 3. Hash the passowrd
@@ -74,29 +74,31 @@ func (s *AuthService) SignIn(req dto.SignInReq) (dto.SignInRes, error) {
 	user, err := s.authRepo.FindByEmail(req.Email)
 
 	if err != nil {
+
+		if errors.Is(err, repositories.ErrUserNotFound) {
+			return dto.SignInRes{}, ErrInvalidCredentials
+		}
 		return dto.SignInRes{}, err
 	}
 
 	if user.ID == 0 {
-		return dto.SignInRes{}, errors.New("Invalid email or password")
+		return dto.SignInRes{}, ErrInvalidCredentials
 	}
 
 	if user.Password == nil {
-		return dto.SignInRes{}, errors.New("This user uses google account sign in")
+		return dto.SignInRes{}, ErrUserGoogleSignIn
 	}
 
 	// 2. Make sure password match
-	passwordErr := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(req.Password))
-
-	if passwordErr != nil {
-		return dto.SignInRes{}, errors.New("Invalid email or password")
+	if passwordErr := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(req.Password)); passwordErr != nil {
+		return dto.SignInRes{}, ErrInvalidCredentials
 	}
 
 	// 3. Create refresh token
 	refreshTokenString, refreshErr := s.CreateToken(24*30, user.ID, true)
 
 	if refreshErr != nil {
-		return dto.SignInRes{}, errors.New("Failed to create token")
+		return dto.SignInRes{}, ErrFailedCreateToken
 	}
 
 	// 4. create refresh token in table
@@ -114,7 +116,7 @@ func (s *AuthService) SignIn(req dto.SignInReq) (dto.SignInRes, error) {
 	accessTokenString, accessErr := s.CreateToken(12, user.ID, false)
 
 	if accessErr != nil {
-		return dto.SignInRes{}, errors.New("Failed to create token")
+		return dto.SignInRes{}, ErrFailedCreateToken
 	}
 
 	// 6. send token and success
@@ -175,7 +177,7 @@ func (s *AuthService) DeleteToken(req dto.RefreshTokenReq) error {
 	}
 
 	return nil
-} 
+}
 
 // HELPER FUNCTION
 func (s *AuthService) CreateToken(hour int, userID uint, isRefresh bool) (string, error) {
@@ -191,17 +193,17 @@ func (s *AuthService) CreateToken(hour int, userID uint, isRefresh bool) (string
 
 	// 3. secret adjustments
 	var secret = []byte(s.cfg.JWTSecret)
-	
+
 	if isRefresh {
 		secret = []byte(s.cfg.RefreshSecret)
 	}
-	
+
 	// 3. signed the token
 	tokenString, err := token.SignedString(secret)
 
 	// 4. error checks
 	if err != nil {
-		return "", errors.New("Failed to create token")
+		return "", err
 	}
 
 	return tokenString, nil
