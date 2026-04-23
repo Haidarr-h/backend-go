@@ -21,6 +21,10 @@ func ParseValidationErrors(err error) map[string]string {
 			fields[field] = field + " field must be atleast " + e.Param() + " characters"
 		case "max":
 			fields[field] = field + " field must be at most " + e.Param() + " characters"
+		case "alpha":
+			fields[field] = field + " field must contain letters only"
+		case "alphanum":
+			fields[field] = field + " field must contain letters and numbers only"
 		default:
 			fields[field] = field + " field is invalid"
 		}

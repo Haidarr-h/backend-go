@@ -47,6 +47,9 @@ func (r *UserRepository) FindByUsername(username string) (models.User, error) {
 
 	// 2. Check error
 	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return models.User{}, ErrUserNotFound
+		}
 		return models.User{}, result.Error
 	}
 
@@ -64,7 +67,7 @@ func (r *UserRepository) CreateUser(user models.User) (models.User, error) {
 
 	// 2. check error
 	if result.Error != nil {
-		return  models.User{}, result.Error
+		return models.User{}, result.Error
 	}
 
 	if result.RowsAffected == 0 {
