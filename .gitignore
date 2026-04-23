@@ -21,3 +21,4 @@
 # builded
 .backend-go
 backend-go
+tmp/
