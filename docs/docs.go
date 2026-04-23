@@ -42,6 +42,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dto.RefreshTokenReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "api key",
+                        "name": "x-api-key",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -85,6 +92,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dto.SignInReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "api key",
+                        "name": "x-api-key",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -142,6 +156,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dto.RefreshTokenReq"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "api key",
+                        "name": "x-api-key",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -183,6 +204,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/dto.SignUpRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "api key",
+                        "name": "x-api-key",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {

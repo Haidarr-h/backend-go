@@ -183,6 +183,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/dto.RefreshTokenReq'
+      - description: api key
+        in: header
+        name: x-api-key
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -210,6 +215,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/dto.SignInReq'
+      - description: api key
+        in: header
+        name: x-api-key
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -246,6 +256,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/dto.RefreshTokenReq'
+      - description: api key
+        in: header
+        name: x-api-key
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -272,6 +287,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/dto.SignUpRequest'
+      - description: api key
+        in: header
+        name: x-api-key
+        required: true
+        type: string
       produces:
       - application/json
       responses:

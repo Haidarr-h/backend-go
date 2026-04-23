@@ -26,6 +26,7 @@ func NewAuthController(authService *services.AuthService) *AuthController {
 // @Accept       json
 // @Produce      json
 // @Param        body  body      dto.SignUpRequest    true  "Signup credentials"
+// @Param        x-api-key  header      string    true  "api key"
 // @Security     ApiKeyAuth
 // @Success      201   {object}  dto.SignUpResponse
 // @Failure      400   {object}  dto.ErrorRes400
@@ -67,6 +68,7 @@ func (rc *AuthController) SignUp(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        body  body      dto.SignInReq   true  "Login credentials"
+// @Param        x-api-key  header      string    true  "api key"
 // @Security     ApiKeyAuth
 // @Success      200   {object}  dto.SignInRes
 // @Failure      400   {object}  dto.ErrorRes400
@@ -121,6 +123,7 @@ func (rc *AuthController) SignIn(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        body  body      dto.RefreshTokenReq   true  "Login credentials"
+// @Param        x-api-key  header      string    true  "api key"
 // @Security     ApiKeyAuth
 // @Success      200   {object}  dto.RefreshTokenRes
 // @Failure      400   {object}  any
@@ -152,6 +155,7 @@ func (rc *AuthController) Refresh(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        body  body      dto.RefreshTokenReq   true  "Login credentials"
+// @Param        x-api-key  header      string    true  "api key"
 // @Security     ApiKeyAuth
 // @Success      200   {object}  any
 // @Failure      400   {object}  any
