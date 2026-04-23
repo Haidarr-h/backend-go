@@ -30,16 +30,12 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 	_, emailErr := s.authRepo.FindByEmail(req.Email)
 	if emailErr == nil {
 		return dto.SignUpResponse{}, ErrEmailUsernameExists
-	} else if !errors.Is(emailErr, repositories.ErrUserNotFound) {
-		return dto.SignUpResponse{}, emailErr
 	}
 
 	// 2. Check if username already exist
 	_, usernameErr := s.authRepo.FindByUsername(req.Username)
 	if usernameErr == nil {
 		return dto.SignUpResponse{}, ErrEmailUsernameExists
-	} else if !errors.Is(usernameErr, repositories.ErrUserNotFound) {
-		return dto.SignUpResponse{}, usernameErr
 	}
 
 	// 3. Hash the passowrd
