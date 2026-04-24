@@ -27,15 +27,23 @@ func NewAuthService(authRepo *repositories.UserRepository, cfg *config.Config, r
 func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) {
 
 	// 1. Check if user email already exist
-	_, emailErr := s.authRepo.FindByEmail(req.Email)
-	if emailErr == nil {
-		return dto.SignUpResponse{}, ErrEmailUsernameExists
+	isEmailExist, emailErr := s.authRepo.ExistByEmail(req.Email)
+	if emailErr != nil {
+		return dto.SignUpResponse{}, emailErr
+	}
+
+	if isEmailExist {
+		return dto.SignUpResponse{}, ErrEmailIsExists
 	}
 
 	// 2. Check if username already exist
-	_, usernameErr := s.authRepo.FindByUsername(req.Username)
-	if usernameErr == nil {
-		return dto.SignUpResponse{}, ErrEmailUsernameExists
+	isUsernameExist, usernameErr := s.authRepo.ExistByUsername(req.Username)
+	if usernameErr != nil {
+		return dto.SignUpResponse{}, usernameErr
+	}
+
+	if isUsernameExist {
+		return dto.SignUpResponse{}, ErrUsernameIsExists
 	}
 
 	// 3. Hash the passowrd
@@ -55,16 +63,16 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 	}
 
 	// 5. create the user
-	user_result, err := s.authRepo.CreateUser(user)
+	result, err := s.authRepo.CreateUser(user)
 	if err != nil {
 		return dto.SignUpResponse{}, err
 	}
 
 	response := dto.SignUpResponse{
-		ID:        user_result.ID,
-		FirstName: user_result.FirstName,
-		LastName:  user_result.LastName,
-		Username:  user_result.Username,
+		ID:        result.ID,
+		FirstName: result.FirstName,
+		LastName:  result.LastName,
+		Username:  result.Username,
 	}
 
 	return response, nil
@@ -92,6 +100,7 @@ func (s *AuthService) SignIn(req dto.SignInReq) (dto.SignInRes, error) {
 		if errors.Is(err, repositories.ErrUserNotFound) {
 			return dto.SignInRes{}, ErrInvalidCredentials
 		}
+
 		return dto.SignInRes{}, err
 	}
 

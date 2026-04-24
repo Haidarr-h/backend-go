@@ -3,7 +3,8 @@ package services
 import "errors"
 
 // auth - sign up
-var ErrEmailUsernameExists = errors.New("email or username already exist")
+var ErrEmailIsExists = errors.New("email is already exist")
+var ErrUsernameIsExists = errors.New("username is already exist")
 
 // auth - sign in
 var ErrInvalidCredentials = errors.New("invalid email or username or password")

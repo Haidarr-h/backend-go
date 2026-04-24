@@ -48,12 +48,13 @@ func (rc *AuthController) SignUp(c *gin.Context) {
 	result, err := rc.authService.SignUp(body)
 
 	if err != nil {
-		if errors.Is(err, services.ErrEmailUsernameExists) {
+		if errors.Is(err, services.ErrEmailIsExists) || errors.Is(err, services.ErrUsernameIsExists) {
 			response.Conflict(c, "failed to sign up", err.Error())
 			return
 		}
 
-		response.InternalError(c, "failed to sign up", err.Error())
+		logger.Log.Error("sign up internal server error", "error", err)
+		response.InternalError(c, "failed to sign up", "internal server error")
 		return
 	}
 
