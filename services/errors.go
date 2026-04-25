@@ -10,3 +10,6 @@ var ErrUsernameIsExists = errors.New("username is already exist")
 var ErrInvalidCredentials = errors.New("invalid email or username or password")
 var ErrUserGoogleSignIn = errors.New("user uses different way to sign in")
 var ErrFailedCreateToken = errors.New("failed to create token")
+
+// oauth
+var ErrInvalidGoogleIDToken = errors.New("invalid google id token, missmatch")

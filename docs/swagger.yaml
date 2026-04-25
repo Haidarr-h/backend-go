@@ -36,13 +36,6 @@ definitions:
     required:
     - id
     type: object
-  controllers.GoogleTokenRequest:
-    properties:
-      id_token:
-        type: string
-    required:
-    - id_token
-    type: object
   controllers.updateReq:
     properties:
       fullName:
@@ -78,6 +71,30 @@ definitions:
       success:
         example: false
         type: boolean
+    type: object
+  dto.GoogleSignInReq:
+    properties:
+      id_token:
+        type: string
+    required:
+    - id_token
+    type: object
+  dto.GoogleSignInRes:
+    properties:
+      accessToken:
+        example: xxx...
+        type: string
+      firstName:
+        type: string
+      id:
+        type: integer
+      lastName:
+        type: string
+      refreshToken:
+        example: yyyyyy
+        type: string
+      username:
+        type: string
     type: object
   dto.RefreshTokenReq:
     properties:
@@ -610,30 +627,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/controllers.GoogleTokenRequest'
+          $ref: '#/definitions/dto.GoogleSignInReq'
       produces:
       - application/json
       responses:
         "200":
           description: Returns JWT token and user info
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.GoogleSignInRes'
         "400":
-          description: id_token is required
+          description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Invalid Google token
-          schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.ErrorRes400'
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.ErrorRes500'
       summary: Sign in with Google
       tags:
       - auth

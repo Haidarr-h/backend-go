@@ -26,7 +26,7 @@ type SignInRes struct {
 	AccessToken  string `json:"accessToken" example:"xxxxx"`
 	RefreshToken string `json:"refreshToken" example:"yyyyyy"`
 }
-	
+
 // REFRESH TOKEN
 type RefreshTokenReq struct {
 	RefreshToken string `json:"refreshToken" binding:"required" example:"yyyyy..."`
@@ -37,3 +37,8 @@ type RefreshTokenRes struct {
 	RefreshToken string `json:"refreshToken" example:"yyyyyy"`
 }
 
+// JWT CREATION
+type Tokens struct {
+	AccessToken  string `json:"accessToken" example:"xxx..."`
+	RefreshToken string `json:"refreshToken" example:"yyyyyy"`
+}

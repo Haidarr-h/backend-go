@@ -231,3 +231,5 @@ func (s *AuthService) CreateToken(hour int, userID uint, isRefresh bool) (string
 
 	return tokenString, nil
 }
+
+

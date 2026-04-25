@@ -682,7 +682,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.GoogleTokenRequest"
+                            "$ref": "#/definitions/dto.GoogleSignInReq"
                         }
                     }
                 ],
@@ -690,29 +690,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Returns JWT token and user info",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.GoogleSignInRes"
                         }
                     },
                     "400": {
-                        "description": "id_token is required",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid Google token",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.ErrorRes400"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.ErrorRes500"
                         }
                     }
                 }
@@ -782,17 +772,6 @@ const docTemplate = `{
                 }
             }
         },
-        "controllers.GoogleTokenRequest": {
-            "type": "object",
-            "required": [
-                "id_token"
-            ],
-            "properties": {
-                "id_token": {
-                    "type": "string"
-                }
-            }
-        },
         "controllers.updateReq": {
             "type": "object",
             "required": [
@@ -842,6 +821,42 @@ const docTemplate = `{
                 "success": {
                     "type": "boolean",
                     "example": false
+                }
+            }
+        },
+        "dto.GoogleSignInReq": {
+            "type": "object",
+            "required": [
+                "id_token"
+            ],
+            "properties": {
+                "id_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GoogleSignInRes": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string",
+                    "example": "xxx..."
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "refreshToken": {
+                    "type": "string",
+                    "example": "yyyyyy"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },

@@ -26,7 +26,7 @@ func Load() *Config {
 		DBUrl:          getEnv("DB", ""),
 		JWTSecret:      getEnv("SECRET", ""),
 		ClientAPIKey:   getEnv("CLIENT_API_KEY", ""),
-		GoogleClientID: getEnv("CLIENGOOGLE_CLIENT_IDT_API_KEY", ""),
+		GoogleClientID: getEnv("GOOGLE_CLIENT_ID", ""),
 		RefreshSecret:  getEnv("REFRESH_SECRET", ""),
 		DB:             db,
 	}
