@@ -59,7 +59,7 @@ func (rc *AuthController) SignUp(c *gin.Context) {
 	}
 
 	// 3. Success
-	response.OK(c, "sign up successful", result)
+	response.OK(c, "sign up successful, check email for verification", result)
 }
 
 // Login godoc
@@ -177,4 +177,18 @@ func (rc *AuthController) SignOut(c *gin.Context) {
 	}
 
 	response.OK(c, "sign out successful", nil)
+}
+
+func (rc *AuthController) VerifyOtp(c *gin.Context) {
+
+	// 1. parse body
+	var req dto.VerifyOTPreq
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "bad request", validation.ParseValidationErrors(err))
+		logger.Log.Info("wrong request body at verify OTP")
+		return
+	}
+
+	// 2. send the req body to service
 }

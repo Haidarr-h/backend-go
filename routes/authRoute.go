@@ -15,7 +15,8 @@ func RegisterAuthRoutes(rg *gin.RouterGroup, cfg *config.Config) {
 	// 1. Wire the dependencies
 	authRepo := repositories.NewUserRepository(cfg.DB)
 	refreshRepo := repositories.NewRefreshTokenRepository(cfg.DB)
-	authService := services.NewAuthService(authRepo, cfg, refreshRepo)
+	otpRepo := repositories.NewOTPRepository(cfg.DB)
+	authService := services.NewAuthService(authRepo, cfg, refreshRepo, otpRepo)
 	authController := controllers.NewAuthController(authService)
 	oAuthService := services.NewOAuthService(authRepo, cfg)
 	oAuthController := controllers.NewOAuthController(oAuthService)

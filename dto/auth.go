@@ -10,10 +10,11 @@ type SignUpRequest struct {
 }
 
 type SignUpResponse struct {
-	ID        uint   `json:"id"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Username  string `json:"username"`
+	ID         uint   `json:"id"`
+	FirstName  string `json:"firstName"`
+	LastName   string `json:"lastName"`
+	Username   string `json:"username"`
+	IsVerified bool   `json:"isVerified"`
 }
 
 // SIGN IN
@@ -42,3 +43,10 @@ type Tokens struct {
 	AccessToken  string `json:"accessToken" example:"xxx..."`
 	RefreshToken string `json:"refreshToken" example:"yyyyyy"`
 }
+
+// verify otp
+type VerifyOTPreq struct {
+	Email   string `json:"email" binding:"required,email" example:"haidar@gmail.com"`
+	OtpCode string `json:"otpCode" binding:"required" example:"111111"`
+}
+

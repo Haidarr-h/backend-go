@@ -14,6 +14,7 @@ type Config struct {
 	GoogleClientID string
 	DB             *gorm.DB
 	RefreshSecret  string
+	ResendKey      string
 }
 
 func Load() *Config {
@@ -28,6 +29,7 @@ func Load() *Config {
 		ClientAPIKey:   getEnv("CLIENT_API_KEY", ""),
 		GoogleClientID: getEnv("GOOGLE_CLIENT_ID", ""),
 		RefreshSecret:  getEnv("REFRESH_SECRET", ""),
+		ResendKey:      getEnv("RESEND_KEY", ""),
 		DB:             db,
 	}
 }

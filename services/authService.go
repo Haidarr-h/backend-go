@@ -7,6 +7,7 @@ import (
 	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/dto"
 	"github.com/Haidarr-h/backend-go/models"
+	"github.com/Haidarr-h/backend-go/pkg/otp"
 	"github.com/Haidarr-h/backend-go/pkg/utils"
 	"github.com/Haidarr-h/backend-go/repositories"
 	"github.com/golang-jwt/jwt/v5"
@@ -16,11 +17,12 @@ import (
 type AuthService struct {
 	authRepo    *repositories.UserRepository
 	refreshRepo *repositories.RefreshTokenRepository
+	otpRepo     *repositories.OtpRepository
 	cfg         *config.Config
 }
 
-func NewAuthService(authRepo *repositories.UserRepository, cfg *config.Config, refreshRepo *repositories.RefreshTokenRepository) *AuthService {
-	return &AuthService{authRepo: authRepo, cfg: cfg, refreshRepo: refreshRepo}
+func NewAuthService(authRepo *repositories.UserRepository, cfg *config.Config, refreshRepo *repositories.RefreshTokenRepository, otpRepo *repositories.OtpRepository) *AuthService {
+	return &AuthService{authRepo: authRepo, cfg: cfg, refreshRepo: refreshRepo, otpRepo: otpRepo}
 }
 
 // SIGN UP
@@ -68,11 +70,38 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 		return dto.SignUpResponse{}, err
 	}
 
+	// 6. generate OTP
+	plainOTP, hashedOTP, otpErr := otp.GenerateOtp()
+
+	if otpErr != nil {
+		return dto.SignUpResponse{}, otpErr
+	}
+
+	// 7. create data at OTP table
+	otpData := models.OtpVerification{
+		UserID: result.ID,
+		OTPHash: hashedOTP,
+		ExpiresAt: time.Now().Add(time.Minute * 60),
+		Attempts: 0,
+		Used: false,
+	}
+
+	if _, createOtpErr := s.otpRepo.Create(otpData); createOtpErr != nil {
+		return dto.SignUpResponse{}, createOtpErr
+	}
+
+	// 8. send OTP to the email
+	if err := otp.SendOTP(user.Email, plainOTP, s.cfg); err != nil {
+		return dto.SignUpResponse{}, err
+	}
+
+	// 9. success response
 	response := dto.SignUpResponse{
-		ID:        result.ID,
-		FirstName: result.FirstName,
-		LastName:  result.LastName,
-		Username:  result.Username,
+		ID:         result.ID,
+		FirstName:  result.FirstName,
+		LastName:   result.LastName,
+		Username:   result.Username,
+		IsVerified: result.IsVerified,
 	}
 
 	return response, nil
@@ -232,4 +261,16 @@ func (s *AuthService) CreateToken(hour int, userID uint, isRefresh bool) (string
 	return tokenString, nil
 }
 
+// verify otp
+func (s *AuthService) VerifyOTP(req dto.VerifyOTPreq) (bool, error) {
+	// 1. find data based on email
 
+	// 2. check the attempts 
+	// 
+	// 3. read and compare the otp
+
+	// 4. update the verify otp table,
+
+	// 4. 
+
+}
