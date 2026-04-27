@@ -304,7 +304,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "verify the otp that sends to email",
+                "description": "verify the otp that send to email",
                 "consumes": [
                     "application/json"
                 ],

@@ -181,7 +181,7 @@ func (rc *AuthController) SignOut(c *gin.Context) {
 
 // VerifyOtp godoc
 // @Summary      Verify OTP
-// @Description  verify the otp that sends to email
+// @Description  verify the otp that send to email
 // @Tags         auth
 // @Accept       json
 // @Produce      json

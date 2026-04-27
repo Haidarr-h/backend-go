@@ -395,7 +395,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: verify the otp that sends to email
+      description: verify the otp that send to email
       parameters:
       - description: Login credentials
         in: body
