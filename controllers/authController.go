@@ -179,6 +179,19 @@ func (rc *AuthController) SignOut(c *gin.Context) {
 	response.OK(c, "sign out successful", nil)
 }
 
+// VerifyOtp godoc
+// @Summary      Verify OTP
+// @Description  verify the otp that sends to email
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.VerifyOTPreq   true  "Login credentials"
+// @Param        x-api-key  header      string    true  "api key"
+// @Security     ApiKeyAuth
+// @Success      200   {object}  any
+// @Failure      400   {object}  dto.ErrorRes400
+// @Failure      500   {object}  dto.ErrorRes500
+// @Router       /api/v1/auth/verifyOTP [post]
 func (rc *AuthController) VerifyOtp(c *gin.Context) {
 
 	// 1. parse body
@@ -191,4 +204,39 @@ func (rc *AuthController) VerifyOtp(c *gin.Context) {
 	}
 
 	// 2. send the req body to service
+	_, err := rc.authService.VerifyOTP(req)
+	if err != nil {
+
+		// too many attempts
+		if errors.Is(err, services.ErrInvalidOTPAttempts) {
+			response.BadRequest(c, "bad request", err.Error())
+			return
+		}
+
+		// otp expired
+		if errors.Is(err, services.ErrOTPExpired) {
+			response.Gone(c, "OTP Expired", err.Error())
+			return
+		}
+
+		// already used
+		if errors.Is(err, services.ErrInvalidOTPUsed) {
+			response.BadRequest(c, "bad request - OTP already used", err.Error())
+			return
+		}
+
+		// invalid otp
+		if errors.Is(err, services.ErrInvalidOTP) {
+			response.BadRequest(c, "bad request - otp not match", err.Error())
+			return
+		}
+
+		logger.Log.Error("internal error", "error", err)
+		response.InternalError(c, "internal server error", "internal server error")
+		return
+	}
+
+	response.OK(c, "otp verified successfully", "otp verified successfully")
 }
+
+

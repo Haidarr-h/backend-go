@@ -1,12 +1,15 @@
 package services
 
 import (
+	"crypto/sha256"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/dto"
 	"github.com/Haidarr-h/backend-go/models"
+	"github.com/Haidarr-h/backend-go/pkg/logger"
 	"github.com/Haidarr-h/backend-go/pkg/otp"
 	"github.com/Haidarr-h/backend-go/pkg/utils"
 	"github.com/Haidarr-h/backend-go/repositories"
@@ -79,11 +82,11 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 
 	// 7. create data at OTP table
 	otpData := models.OtpVerification{
-		UserID: result.ID,
-		OTPHash: hashedOTP,
+		UserID:    result.ID,
+		OTPHash:   hashedOTP,
 		ExpiresAt: time.Now().Add(time.Minute * 60),
-		Attempts: 0,
-		Used: false,
+		Attempts:  0,
+		Used:      false,
 	}
 
 	if _, createOtpErr := s.otpRepo.Create(otpData); createOtpErr != nil {
@@ -263,14 +266,53 @@ func (s *AuthService) CreateToken(hour int, userID uint, isRefresh bool) (string
 
 // verify otp
 func (s *AuthService) VerifyOTP(req dto.VerifyOTPreq) (bool, error) {
-	// 1. find data based on email
 
-	// 2. check the attempts 
-	// 
+	// 1. find data based on email
+	otpData, otpDataErr := s.otpRepo.FindByEmail(req.Email)
+
+	if otpDataErr != nil {
+		return false, otpDataErr
+	}
+
+	// 2. check the attempts, used, and expiry
+	if otpData.Attempts >= 5 {
+		return false, ErrInvalidOTPAttempts
+	}
+
+	if otpData.ExpiresAt.Before(time.Now()) {
+		return false, ErrOTPExpired
+	}
+
+	if otpData.Used {
+		return false, ErrInvalidOTPUsed
+	}
+
 	// 3. read and compare the otp
+	hashOTPreq := fmt.Sprintf("%x", sha256.Sum256([]byte(req.OtpCode)))
+
+	if hashOTPreq != otpData.OTPHash {
+		logger.Log.Error("failed to compare otp code")
+
+		otpData.Attempts += 1
+		if _, updateErr := s.otpRepo.Update(otpData); updateErr != nil {
+			return false, updateErr
+		}
+
+		return false, ErrInvalidOTP
+	}
 
 	// 4. update the verify otp table,
+	otpData.Attempts += 1
+	otpData.Used = true
+	if _, updateErr := s.otpRepo.Update(otpData); updateErr != nil {
+		return false, updateErr
+	}
 
-	// 4. 
+	// 5. update the user is verified
+	if verifyErr := s.authRepo.Verify(otpData.UserID); verifyErr != nil {
+		return false, verifyErr
+	}
 
+	// 5. response
+	return true, nil
 }

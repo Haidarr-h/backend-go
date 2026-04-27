@@ -13,3 +13,9 @@ var ErrFailedCreateToken = errors.New("failed to create token")
 
 // oauth
 var ErrInvalidGoogleIDToken = errors.New("invalid google id token, missmatch")
+
+// otp
+var ErrInvalidOTPAttempts = errors.New("too many attempts (5 times), please request a new code")
+var ErrOTPExpired = errors.New("verification code has expired, please request a new one")
+var ErrInvalidOTPUsed = errors.New("verification code has already been used, please request a new one")
+var ErrInvalidOTP = errors.New("invalid otp code")

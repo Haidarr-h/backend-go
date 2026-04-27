@@ -54,6 +54,14 @@ func Conflict(c *gin.Context, message string, errorMes any) {
 	})
 }
 
+func Gone(c *gin.Context, message string, errorMes any) {
+	c.JSON(http.StatusGone, Response{
+		Success: false,
+		Message: message,
+		Error:   errorMes,
+	})
+}
+
 func NotFound(c *gin.Context, message string, errorMes any) {
 	c.JSON(http.StatusNotFound, Response{
 		Success: false,

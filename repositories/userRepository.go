@@ -180,3 +180,24 @@ func (r *UserRepository) ExistByUsername(username string) (bool, error) {
 	// 3. success
 	return count > 0, nil
 }
+
+// SET VERIFY
+func (r *UserRepository) Verify(id uint) error {
+
+	// 1. query
+	query := `
+		UPDATE users
+		SET is_verified = TRUE
+		WHERE id = ?
+	`
+	result := r.db.Exec(query, id)
+
+	// 2. error
+	if result.Error != nil {
+		logger.Log.Error("verify user update function failed", "error", result.Error)
+		return result.Error
+	}
+
+	// 3. success response
+	return nil
+}

@@ -30,7 +30,49 @@ func (r *OtpRepository) Create(otp models.OtpVerification) (models.OtpVerificati
 	return otp, nil
 }
 
-func (r *OtpRepository) FindValidOtp(otp models.OtpVerification) (models.OtpVerification, error) {
+// FIND OTP
+func (r *OtpRepository) FindByEmail(email string) (models.OtpVerification, error) {
+	var otp models.OtpVerification
+
 	// 1. query
-	query := "SELECT "
+	query := `
+		SELECT otp_verifications.* 
+		FROM otp_verifications
+		INNER JOIN users
+		ON otp_verifications.user_id = users.id
+		WHERE users.email = ?
+		ORDER BY otp_verifications.created_at DESC
+		LIMIT 1
+		`
+	result := r.db.Raw(query, email).Scan(&otp)
+
+	// 2. error check
+	if result.Error != nil {
+		logger.Log.Error("findValidOtp query function failed", "error", result.Error)
+		return models.OtpVerification{}, result.Error
+	}
+
+	// 3. success return
+	return otp, nil
+}
+
+// UPDATE OTP
+func (r *OtpRepository) Update(otp models.OtpVerification) (models.OtpVerification, error) {
+
+	// 1. query
+	query := `
+		UPDATE otp_verifications
+		SET attempts = ?, used = ?
+		WHERE id = ?
+	`
+	result := r.db.Raw(query, otp.Attempts, otp.Used, otp.ID).Scan(&otp)
+	
+	// 2. error check
+	if result.Error != nil {
+		logger.Log.Error("update otp query function failed", "error", result.Error)
+		return models.OtpVerification{}, result.Error
+	}
+
+	// 3. success response
+	return otp, nil
 }
