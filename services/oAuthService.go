@@ -58,6 +58,7 @@ func (s *OAuthService) GoogleSignIn(req dto.GoogleSignInReq) (dto.GoogleSignInRe
 			userData.GoogleID = &googleUserInfo.Sub
 			userData.Picture = &googleUserInfo.Picture
 			userData.ID = userResult.ID
+			userData.IsVerified = true
 
 			// update
 			_, updateErr := s.userRepo.UpdateUser(userData)
@@ -75,6 +76,7 @@ func (s *OAuthService) GoogleSignIn(req dto.GoogleSignInReq) (dto.GoogleSignInRe
 			userData.Email = googleUserInfo.Email
 			userData.GoogleID = &googleUserInfo.Sub
 			userData.Picture = &googleUserInfo.Picture
+			userData.IsVerified = true
 
 			if googleUserInfo.FamilyName == "" {
 				userData.LastName = googleUserInfo.GivenName

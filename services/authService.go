@@ -316,3 +316,37 @@ func (s *AuthService) VerifyOTP(req dto.VerifyOTPreq) (bool, error) {
 	// 5. response
 	return true, nil
 }
+
+func (s *AuthService) ResendOTP(req dto.ResendOTPreq) error {
+	// 1. find otp data by email
+	otpData, otpDataErr := s.otpRepo.FindByEmail(req.Email)
+	if otpDataErr != nil {
+		return otpDataErr
+	}
+
+	// 2. generate new code, generate new otp, set expiry, used, and attempt
+	plainOTP, hashedOTP, otpErr := otp.GenerateOtp()
+	if otpErr != nil {
+		return otpErr
+	}
+
+	// 3. create new otp verification data in table
+	otpData.OTPHash = hashedOTP
+	otpData.ExpiresAt = time.Now().Add(time.Minute * 60)
+	otpData.Attempts = 0
+	otpData.Used = false
+	otpData.UpdatedAt = time.Now()
+
+	_, createOTPErr := s.otpRepo.Create(otpData)
+	if createOTPErr != nil {
+		return createOTPErr
+	}
+
+	// 4. send the new otp to user gmail
+	if err := otp.SendOTP(req.Email, plainOTP, s.cfg); err != nil {
+		return err
+	}
+
+	// 3. return nil if success
+	return nil
+}

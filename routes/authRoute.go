@@ -31,6 +31,7 @@ func RegisterAuthRoutes(rg *gin.RouterGroup, cfg *config.Config) {
 		auth.POST("/refresh", authController.Refresh)
 		auth.POST("/signout", authController.SignOut)
 		auth.POST("/verifyOTP", authController.VerifyOtp)
+		auth.POST("/resendOTP", authController.ResendOTP)
 		auth.POST("/google/mobile", oAuthController.GoogleMobileSignIn)
 	}
 }

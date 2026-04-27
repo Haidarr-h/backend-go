@@ -113,6 +113,14 @@ definitions:
         example: yyyyyy
         type: string
     type: object
+  dto.ResendOTPreq:
+    properties:
+      email:
+        example: haidar@gmail.com
+        type: string
+    required:
+    - email
+    type: object
   dto.SignInReq:
     properties:
       identifier:
@@ -176,10 +184,24 @@ definitions:
         type: string
       id:
         type: integer
+      isVerified:
+        type: boolean
       lastName:
         type: string
       username:
         type: string
+    type: object
+  dto.VerifyOTPreq:
+    properties:
+      email:
+        example: haidar@gmail.com
+        type: string
+      otpCode:
+        example: "111111"
+        type: string
+    required:
+    - email
+    - otpCode
     type: object
 host: api-staging.liftlogs.my.id
 info:
@@ -218,6 +240,42 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Refresh Token
+      tags:
+      - auth
+  /api/v1/auth/resendOTP:
+    post:
+      consumes:
+      - application/json
+      description: Resend OTP to the email
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ResendOTPreq'
+      - description: api key
+        in: header
+        name: x-api-key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorRes400'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorRes500'
+      security:
+      - ApiKeyAuth: []
+      summary: Resend OTP
       tags:
       - auth
   /api/v1/auth/signin:
@@ -331,6 +389,42 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Sign Up
+      tags:
+      - auth
+  /api/v1/auth/verifyOTP:
+    post:
+      consumes:
+      - application/json
+      description: verify the otp that sends to email
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VerifyOTPreq'
+      - description: api key
+        in: header
+        name: x-api-key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorRes400'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorRes500'
+      security:
+      - ApiKeyAuth: []
+      summary: Verify OTP
       tags:
       - auth
   /api/v1/exercises:

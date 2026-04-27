@@ -65,6 +65,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth/resendOTP": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Resend OTP to the email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Resend OTP",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ResendOTPreq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "api key",
+                        "name": "x-api-key",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {}
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorRes400"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorRes500"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/signin": {
             "post": {
                 "security": [
@@ -228,6 +284,62 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorRes400"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorRes500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/verifyOTP": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "verify the otp that sends to email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Verify OTP",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.VerifyOTPreq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "api key",
+                        "name": "x-api-key",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {}
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorRes400"
                         }
@@ -885,6 +997,18 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ResendOTPreq": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "haidar@gmail.com"
+                }
+            }
+        },
         "dto.SignInReq": {
             "type": "object",
             "required": [
@@ -968,11 +1092,31 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "isVerified": {
+                    "type": "boolean"
+                },
                 "lastName": {
                     "type": "string"
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.VerifyOTPreq": {
+            "type": "object",
+            "required": [
+                "email",
+                "otpCode"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "haidar@gmail.com"
+                },
+                "otpCode": {
+                    "type": "string",
+                    "example": "111111"
                 }
             }
         }

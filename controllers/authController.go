@@ -239,4 +239,37 @@ func (rc *AuthController) VerifyOtp(c *gin.Context) {
 	response.OK(c, "otp verified successfully", "otp verified successfully")
 }
 
+// ResendOTP godoc
+// @Summary      Resend OTP
+// @Description  Resend OTP to the email
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.ResendOTPreq   true  "Login credentials"
+// @Param        x-api-key  header      string    true  "api key"
+// @Security     ApiKeyAuth
+// @Success      200   {object}  any
+// @Failure      400   {object}  dto.ErrorRes400
+// @Failure      500   {object}  dto.ErrorRes500
+// @Router       /api/v1/auth/resendOTP [post]
+func (rc *AuthController) ResendOTP(c *gin.Context) {
 
+	// 1. parsing
+	var req dto.ResendOTPreq
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "bad request", validation.ParseValidationErrors(err))
+		return
+	}
+
+	// 2. goes to service
+	resultErr := rc.authService.ResendOTP(req)
+	if resultErr != nil {
+		logger.Log.Error("failed to perform resend otp", "error", resultErr)
+		response.InternalError(c, "internal server error", "internal server error")
+		return
+	}
+
+	// 3. return
+	response.OK(c, "successfully perform resend otp", "otp has been sent to email")
+}

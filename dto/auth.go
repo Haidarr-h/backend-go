@@ -44,9 +44,13 @@ type Tokens struct {
 	RefreshToken string `json:"refreshToken" example:"yyyyyy"`
 }
 
-// verify otp
+// OTP
 type VerifyOTPreq struct {
 	Email   string `json:"email" binding:"required,email" example:"haidar@gmail.com"`
 	OtpCode string `json:"otpCode" binding:"required" example:"111111"`
+}
+
+type ResendOTPreq struct {
+	Email   string `json:"email" binding:"required,email" example:"haidar@gmail.com"`
 }
 
