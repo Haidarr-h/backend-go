@@ -1,12 +1,13 @@
 package services
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/dto"
-	"github.com/Haidarr-h/backend-go/models"
 	"github.com/Haidarr-h/backend-go/pkg/jwt"
+	"github.com/Haidarr-h/backend-go/pkg/logger"
 	oauth "github.com/Haidarr-h/backend-go/pkg/oAuth"
 	"github.com/Haidarr-h/backend-go/repositories"
 )
@@ -20,6 +21,7 @@ func NewOAuthService(userRepo *repositories.UserRepository, cfg *config.Config) 
 	return &OAuthService{userRepo: userRepo, cfg: cfg}
 }
 
+// GoogleSignIn sign ins by oauth google
 func (s *OAuthService) GoogleSignIn(req dto.GoogleSignInReq) (dto.GoogleSignInRes, error) {
 
 	// 1. verify the token with google api
@@ -29,46 +31,27 @@ func (s *OAuthService) GoogleSignIn(req dto.GoogleSignInReq) (dto.GoogleSignInRe
 		return dto.GoogleSignInRes{}, ErrInvalidGoogleIDToken
 	}
 
-	// 2. find user with google id
-	isUserExist, dbErr := s.userRepo.ExistByGoogleID(googleUserInfo.Sub)
+	// 2. find userData with google id
+	userData, err := s.userRepo.FindByGoogleID(googleUserInfo.Sub)
 
-	if dbErr != nil {
-		return dto.GoogleSignInRes{}, dbErr
+	if err != nil && !errors.Is(err, repositories.ErrUserNotFound) {
+		return dto.GoogleSignInRes{}, err
 	}
 
-	var userData models.User
+	// 3. no user found by google id -> create a new one or updates
+	if errors.Is(err, repositories.ErrUserNotFound) {
 
-	// 3. IF User is not exist (we have to create it first)
-	if !isUserExist {
+		// 3.1 check user by email
+		userData, err = s.userRepo.FindByEmail(googleUserInfo.Email)
 
-		// 3.1 IF email is already occupied
-		isEmailExist, emailErr := s.userRepo.ExistByEmail(googleUserInfo.Email)
-		if emailErr != nil {
-			return dto.GoogleSignInRes{}, emailErr
+		if err != nil && !errors.Is(err, repositories.ErrUserNotFound) {
+			return dto.GoogleSignInRes{}, err
 		}
 
-		// 3.2 user already created (update the user data)
-		if isEmailExist {
-			userResult, userErr := s.userRepo.FindByEmail(googleUserInfo.Email)
-
-			if userErr != nil {
-				return dto.GoogleSignInRes{}, userErr
-			}
-
-			userData.GoogleID = &googleUserInfo.Sub
-			userData.Picture = &googleUserInfo.Picture
-			userData.ID = userResult.ID
-			userData.IsVerified = true
-
-			// update
-			_, updateErr := s.userRepo.UpdateUser(userData)
-			if updateErr != nil {
-				return dto.GoogleSignInRes{}, updateErr
-			}
-
-		} else {
-			// 3.3 USER IS NOT CREATED == CREATE NEW
-
+		// 3.2 no user found by email == CREATE A NEW ONE
+		if errors.Is(err, repositories.ErrUserNotFound) {
+			
+			// user models build
 			baseUsername := strings.Split(googleUserInfo.Email, "@")[0]
 
 			userData.FirstName = googleUserInfo.GivenName
@@ -85,20 +68,30 @@ func (s *OAuthService) GoogleSignIn(req dto.GoogleSignInReq) (dto.GoogleSignInRe
 			}
 
 			// create
-			userDataCreated, createErr := s.userRepo.CreateUser(userData)
-			userData.ID = userDataCreated.ID
+			if userData, err = s.userRepo.CreateUser(userData); err != nil {
+				return dto.GoogleSignInRes{}, err
+			}
 
-			if createErr != nil {
-				return dto.GoogleSignInRes{}, createErr
+
+		} else {
+			// 3.3 found user by email. update the google info columns
+			userData.GoogleID = &googleUserInfo.Sub
+			userData.Picture = &googleUserInfo.Picture
+			userData.IsVerified = true
+
+			if userData, err = s.userRepo.UpdateUser(userData); err != nil {
+				return dto.GoogleSignInRes{}, err
 			}
 		}
+
 	}
 
 	// 4. CREATE THE TOKEN
+	logger.Log.Debug("creating access and refresh token", "user data", userData)
 	tokenResult, err := jwt.CreateAccessRefreshToken(userData.ID, s.cfg)
 
 	if err != nil {
-		return dto.GoogleSignInRes{}, ErrFailedCreateToken
+		return dto.GoogleSignInRes{}, err
 	}
 
 	return dto.GoogleSignInRes{AccessToken: tokenResult.AccessToken, RefreshToken: tokenResult.RefreshToken, ID: userData.ID, FirstName: userData.FirstName, LastName: userData.LastName, Username: userData.Username}, nil

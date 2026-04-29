@@ -10,7 +10,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// create both refresh and access token
+// CreateAccessRefreshToken generates access and refresh tokens
+// used for: sign in manual, sign in by google, and refresh 
 func CreateAccessRefreshToken(userID uint, cfg *config.Config) (dto.Tokens, error) {
 
 	s := repositories.NewRefreshTokenRepository(cfg.DB)
@@ -22,20 +23,18 @@ func CreateAccessRefreshToken(userID uint, cfg *config.Config) (dto.Tokens, erro
 		return dto.Tokens{}, refreshErr
 	}
 
-	// 3. update the NEW refresh token in table
+	// 2. create new row in the refresh token table
 	refreshTokenModel := models.RefreshToken{
 		UserID:    userID,
 		Token:     refreshTokenString,
 		ExpiresAt: time.Now().Add(time.Hour * 24 * 30),
 	}
 
-	refreshTokenModel.ID = userID
-
-	if _, updateErr := s.Update(&refreshTokenModel); updateErr != nil {
-		return dto.Tokens{}, updateErr
+	if _, createErr := s.Create(&refreshTokenModel); createErr != nil {
+		return dto.Tokens{}, createErr
 	}
 
-	// 4. create the access token
+	// 3. create the access token
 	accessTokenString, accessErr := CreateToken(12, userID, false, cfg)
 
 	if accessErr != nil {

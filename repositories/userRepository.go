@@ -19,8 +19,8 @@ func (r *UserRepository) CreateUser(user models.User) (models.User, error) {
 
 	// 1. Create directly
 	// result := r.db.Create(&user)
-	query := "INSERT INTO users (email, first_name, last_name, username, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW()) RETURNING *"
-	result := r.db.Raw(query, user.Email, user.FirstName, user.LastName, user.Username, user.Password).Scan(&user)
+	query := "INSERT INTO users (email, first_name, last_name, username, password, is_verified, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW()) RETURNING *"
+	result := r.db.Raw(query, user.Email, user.FirstName, user.LastName, user.Username, user.Password, user.IsVerified).Scan(&user)
 
 	// 2. check error
 	if result.Error != nil {
@@ -39,8 +39,8 @@ func (r *UserRepository) CreateUser(user models.User) (models.User, error) {
 func (r *UserRepository) UpdateUser(user models.User) (models.User, error) {
 
 	// 1. query
-	query := "UPDATE users SET google_id = ?, picture = ? WHERE id = ? RETURNING *"
-	result := r.db.Raw(query, user.GoogleID, user.Picture, user.ID).Scan(&user)
+	query := "UPDATE users SET google_id = ?, picture = ?, is_verified = ? WHERE id = ? RETURNING *"
+	result := r.db.Raw(query, user.GoogleID, user.Picture, user.ID, user.IsVerified).Scan(&user)
 
 	// 2. error check
 	if result.Error != nil {
@@ -109,12 +109,12 @@ func (r *UserRepository) FindByGoogleID(googleID string) (models.User, error) {
 	var user models.User
 
 	// 1. Search to database
-	query := "SELECT * FROM users WHERE google_id = ?"
+	query := "SELECT * FROM users WHERE google_id = ? LIMIT 1"
 	result := r.db.Raw(query, googleID).Scan(&user)
 
 	// 2. Check error
 	if result.Error != nil {
-		logger.Log.Error("FindByGoogleID query function failed", "error", result.Error, "username", googleID)
+		logger.Log.Error("FindByGoogleID query function failed", "error", result.Error, "id", googleID)
 		return models.User{}, result.Error
 	}
 
