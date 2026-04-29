@@ -19,8 +19,8 @@ func (r *UserRepository) CreateUser(user models.User) (models.User, error) {
 
 	// 1. Create directly
 	// result := r.db.Create(&user)
-	query := "INSERT INTO users (email, first_name, last_name, username, password, is_verified, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW()) RETURNING *"
-	result := r.db.Raw(query, user.Email, user.FirstName, user.LastName, user.Username, user.Password, user.IsVerified).Scan(&user)
+	query := "INSERT INTO users (email, first_name, last_name, username, password, is_verified, google_id, picture, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()) RETURNING *"
+	result := r.db.Raw(query, user.Email, user.FirstName, user.LastName, user.Username, user.Password, user.IsVerified, user.GoogleID, user.Picture).Scan(&user)
 
 	// 2. check error
 	if result.Error != nil {
