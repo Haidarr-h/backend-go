@@ -40,7 +40,7 @@ func (r *UserRepository) UpdateUser(user models.User) (models.User, error) {
 
 	// 1. query
 	query := "UPDATE users SET google_id = ?, picture = ?, is_verified = ? WHERE id = ? RETURNING *"
-	result := r.db.Raw(query, user.GoogleID, user.Picture, user.ID, user.IsVerified).Scan(&user)
+	result := r.db.Raw(query, user.GoogleID, user.Picture, user.IsVerified, user.ID).Scan(&user)
 
 	// 2. error check
 	if result.Error != nil {

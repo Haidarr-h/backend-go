@@ -59,6 +59,7 @@ func RequireAuth(cfg *config.Config) gin.HandlerFunc {
 				"success": false,
 				"message": "Invalid token claims",
 			})
+			return
 		}
 		
 		c.Set("userID", uint(sub))

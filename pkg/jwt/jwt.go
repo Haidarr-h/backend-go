@@ -38,7 +38,7 @@ func CreateAccessRefreshToken(userID uint, cfg *config.Config) (dto.Tokens, erro
 	accessTokenString, accessErr := CreateToken(12, userID, false, cfg)
 
 	if accessErr != nil {
-		return dto.Tokens{}, refreshErr
+		return dto.Tokens{}, accessErr
 	}
 
 	return dto.Tokens{AccessToken: accessTokenString, RefreshToken: refreshTokenString}, nil
