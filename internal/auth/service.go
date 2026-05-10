@@ -1,15 +1,18 @@
-package services
+package auth
 
 import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Haidarr-h/backend-go/config"
-	"github.com/Haidarr-h/backend-go/dto"
+	"github.com/Haidarr-h/backend-go/internal/user"
 	"github.com/Haidarr-h/backend-go/models"
+	jwtlocal "github.com/Haidarr-h/backend-go/pkg/jwtLocal"
 	"github.com/Haidarr-h/backend-go/pkg/logger"
+	oauth "github.com/Haidarr-h/backend-go/pkg/oAuth"
 	"github.com/Haidarr-h/backend-go/pkg/otp"
 	"github.com/Haidarr-h/backend-go/pkg/utils"
 	"github.com/Haidarr-h/backend-go/repositories"
@@ -18,43 +21,43 @@ import (
 )
 
 type AuthService struct {
-	authRepo    *repositories.UserRepository
-	refreshRepo *repositories.RefreshTokenRepository
-	otpRepo     *repositories.OtpRepository
+	userRepo    *user.UserRepository
+	refreshRepo *RefreshTokenRepository
+	otpRepo     *OtpRepository
 	cfg         *config.Config
 }
 
-func NewAuthService(authRepo *repositories.UserRepository, cfg *config.Config, refreshRepo *repositories.RefreshTokenRepository, otpRepo *repositories.OtpRepository) *AuthService {
-	return &AuthService{authRepo: authRepo, cfg: cfg, refreshRepo: refreshRepo, otpRepo: otpRepo}
+func NewAuthService(authRepo *user.UserRepository, cfg *config.Config, refreshRepo *RefreshTokenRepository, otpRepo *OtpRepository) *AuthService {
+	return &AuthService{userRepo: authRepo, cfg: cfg, refreshRepo: refreshRepo, otpRepo: otpRepo}
 }
 
 // SIGN UP
-func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) {
+func (s *AuthService) SignUp(req SignUpRequest) (SignUpResponse, error) {
 
 	// 1. Check if user email already exist
-	isEmailExist, emailErr := s.authRepo.ExistByEmail(req.Email)
+	isEmailExist, emailErr := s.userRepo.ExistByEmail(req.Email)
 	if emailErr != nil {
-		return dto.SignUpResponse{}, emailErr
+		return SignUpResponse{}, emailErr
 	}
 
 	if isEmailExist {
-		return dto.SignUpResponse{}, ErrEmailIsExists
+		return SignUpResponse{}, ErrEmailIsExists
 	}
 
 	// 2. Check if username already exist
-	isUsernameExist, usernameErr := s.authRepo.ExistByUsername(req.Username)
+	isUsernameExist, usernameErr := s.userRepo.ExistByUsername(req.Username)
 	if usernameErr != nil {
-		return dto.SignUpResponse{}, usernameErr
+		return SignUpResponse{}, usernameErr
 	}
 
 	if isUsernameExist {
-		return dto.SignUpResponse{}, ErrUsernameIsExists
+		return SignUpResponse{}, ErrUsernameIsExists
 	}
 
 	// 3. Hash the passowrd
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 10)
 	if err != nil {
-		return dto.SignUpResponse{}, err
+		return SignUpResponse{}, err
 	}
 
 	// 4. Create the user model
@@ -68,16 +71,16 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 	}
 
 	// 5. create the user
-	result, err := s.authRepo.CreateUser(user)
+	result, err := s.userRepo.CreateUser(user)
 	if err != nil {
-		return dto.SignUpResponse{}, err
+		return SignUpResponse{}, err
 	}
 
 	// 6. generate OTP
 	plainOTP, hashedOTP, otpErr := otp.GenerateOtp()
 
 	if otpErr != nil {
-		return dto.SignUpResponse{}, otpErr
+		return SignUpResponse{}, otpErr
 	}
 
 	// 7. create data at OTP table
@@ -90,16 +93,16 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 	}
 
 	if _, createOtpErr := s.otpRepo.Create(otpData); createOtpErr != nil {
-		return dto.SignUpResponse{}, createOtpErr
+		return SignUpResponse{}, createOtpErr
 	}
 
 	// 8. send OTP to the email
 	if err := otp.SendOTP(user.Email, plainOTP, s.cfg); err != nil {
-		return dto.SignUpResponse{}, err
+		return SignUpResponse{}, err
 	}
 
 	// 9. success response
-	response := dto.SignUpResponse{
+	response := SignUpResponse{
 		ID:         result.ID,
 		FirstName:  result.FirstName,
 		LastName:   result.LastName,
@@ -111,7 +114,7 @@ func (s *AuthService) SignUp(req dto.SignUpRequest) (dto.SignUpResponse, error) 
 }
 
 // SIGN IN
-func (s *AuthService) SignIn(req dto.SignInReq) (dto.SignInRes, error) {
+func (s *AuthService) SignIn(req SignInReq) (SignInRes, error) {
 
 	// 1. check sign in by email or username
 	isEmail := utils.IsEmail(req.Identifier)
@@ -121,39 +124,39 @@ func (s *AuthService) SignIn(req dto.SignInReq) (dto.SignInRes, error) {
 
 	// 2. check if user exist
 	if isEmail {
-		user, err = s.authRepo.FindByEmail(req.Identifier)
+		user, err = s.userRepo.FindByEmail(req.Identifier)
 	} else {
-		user, err = s.authRepo.FindByUsername(req.Identifier)
+		user, err = s.userRepo.FindByUsername(req.Identifier)
 	}
 
 	// 3. Error checks
 	if err != nil {
 
 		if errors.Is(err, repositories.ErrUserNotFound) {
-			return dto.SignInRes{}, ErrInvalidCredentials
+			return SignInRes{}, ErrInvalidCredentials
 		}
 
-		return dto.SignInRes{}, err
+		return SignInRes{}, err
 	}
 
 	if user.ID == 0 {
-		return dto.SignInRes{}, ErrInvalidCredentials
+		return SignInRes{}, ErrInvalidCredentials
 	}
 
 	if user.Password == nil {
-		return dto.SignInRes{}, ErrUserGoogleSignIn
+		return SignInRes{}, ErrUserGoogleSignIn
 	}
 
 	// 4. Make sure password match
 	if passwordErr := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(req.Password)); passwordErr != nil {
-		return dto.SignInRes{}, ErrInvalidCredentials
+		return SignInRes{}, ErrInvalidCredentials
 	}
 
 	// 5. Create refresh token
 	refreshTokenString, refreshErr := s.CreateToken(24*30, user.ID, true)
 
 	if refreshErr != nil {
-		return dto.SignInRes{}, ErrFailedCreateToken
+		return SignInRes{}, ErrFailedCreateToken
 	}
 
 	// 6. create refresh token in table
@@ -164,40 +167,40 @@ func (s *AuthService) SignIn(req dto.SignInReq) (dto.SignInRes, error) {
 	}
 
 	if _, createErr := s.refreshRepo.Create(&refreshTokenModel); createErr != nil {
-		return dto.SignInRes{}, createErr
+		return SignInRes{}, createErr
 	}
 
 	// 7. create the access token
 	accessTokenString, accessErr := s.CreateToken(12, user.ID, false)
 
 	if accessErr != nil {
-		return dto.SignInRes{}, ErrFailedCreateToken
+		return SignInRes{}, ErrFailedCreateToken
 	}
 
 	// 8. send token and success
-	return dto.SignInRes{RefreshToken: refreshTokenString, AccessToken: accessTokenString}, nil
+	return SignInRes{RefreshToken: refreshTokenString, AccessToken: accessTokenString}, nil
 }
 
 // REFRESH TOKEN
-func (s *AuthService) Refresh(req dto.RefreshTokenReq) (dto.RefreshTokenRes, error) {
+func (s *AuthService) Refresh(req RefreshTokenReq) (RefreshTokenRes, error) {
 
 	// 1. find the refresh token and check if any
 	result, err := s.refreshRepo.FindByToken(req.RefreshToken)
 
 	// 2. error checks
 	if err != nil {
-		return dto.RefreshTokenRes{}, err
+		return RefreshTokenRes{}, err
 	}
 
 	if result.ExpiresAt.Before(time.Now()) {
-		return dto.RefreshTokenRes{}, errors.New("refresh token is expired")
+		return RefreshTokenRes{}, errors.New("refresh token is expired")
 	}
 
 	// 3. create a new refresh token
 	refreshTokenString, refreshErr := s.CreateToken(24*30, result.UserID, true)
 
 	if refreshErr != nil {
-		return dto.RefreshTokenRes{}, ErrFailedCreateToken
+		return RefreshTokenRes{}, ErrFailedCreateToken
 	}
 
 	// 4. update the NEW refresh token in table
@@ -210,21 +213,21 @@ func (s *AuthService) Refresh(req dto.RefreshTokenReq) (dto.RefreshTokenRes, err
 	refreshTokenModel.ID = result.ID
 
 	if _, updateErr := s.refreshRepo.Update(&refreshTokenModel); updateErr != nil {
-		return dto.RefreshTokenRes{}, updateErr
+		return RefreshTokenRes{}, updateErr
 	}
 
 	// 5. create the access token
 	accessTokenString, accessErr := s.CreateToken(12, result.UserID, false)
 
 	if accessErr != nil {
-		return dto.RefreshTokenRes{}, ErrFailedCreateToken
+		return RefreshTokenRes{}, ErrFailedCreateToken
 	}
 
-	return dto.RefreshTokenRes{AccessToken: accessTokenString, RefreshToken: refreshTokenString}, nil
+	return RefreshTokenRes{AccessToken: accessTokenString, RefreshToken: refreshTokenString}, nil
 }
 
 // DELETE
-func (s *AuthService) DeleteToken(req dto.RefreshTokenReq) error {
+func (s *AuthService) DeleteToken(req RefreshTokenReq) error {
 
 	// 1. Delete it
 	if err := s.refreshRepo.DeleteByToken(req.RefreshToken); err != nil {
@@ -265,7 +268,7 @@ func (s *AuthService) CreateToken(hour int, userID uint, isRefresh bool) (string
 }
 
 // verify otp
-func (s *AuthService) VerifyOTP(req dto.VerifyOTPreq) (bool, error) {
+func (s *AuthService) VerifyOTP(req VerifyOTPreq) (bool, error) {
 
 	// 1. find data based on email
 	otpData, otpDataErr := s.otpRepo.FindByEmail(req.Email)
@@ -309,7 +312,7 @@ func (s *AuthService) VerifyOTP(req dto.VerifyOTPreq) (bool, error) {
 	}
 
 	// 5. update the user is verified
-	if verifyErr := s.authRepo.Verify(otpData.UserID); verifyErr != nil {
+	if verifyErr := s.userRepo.Verify(otpData.UserID); verifyErr != nil {
 		return false, verifyErr
 	}
 
@@ -317,7 +320,7 @@ func (s *AuthService) VerifyOTP(req dto.VerifyOTPreq) (bool, error) {
 	return true, nil
 }
 
-func (s *AuthService) ResendOTP(req dto.ResendOTPreq) error {
+func (s *AuthService) ResendOTP(req ResendOTPreq) error {
 	// 1. find otp data by email
 	otpData, otpDataErr := s.otpRepo.FindByEmail(req.Email)
 	if otpDataErr != nil {
@@ -349,4 +352,112 @@ func (s *AuthService) ResendOTP(req dto.ResendOTPreq) error {
 
 	// 3. return nil if success
 	return nil
+}
+
+// CreateAccessRefreshToken generates access and refresh tokens
+// used for: sign in manual, sign in by google, and refresh
+func (s *AuthService) CreateAccessRefreshToken(userID uint, cfg *config.Config) (Tokens, error) {
+
+	// 1. Generate the refresh token
+	refreshTokenString, refreshErr := jwtlocal.CreateToken(24*30, userID, true, cfg)
+
+	if refreshErr != nil {
+		return Tokens{}, refreshErr
+	}
+
+	// 2. create new row in the refresh token table
+	refreshTokenModel := models.RefreshToken{
+		UserID:    userID,
+		Token:     refreshTokenString,
+		ExpiresAt: time.Now().Add(time.Hour * 24 * 30),
+	}
+
+	if _, createErr := s.refreshRepo.Create(&refreshTokenModel); createErr != nil {
+		return Tokens{}, createErr
+	}
+
+	// 3. create the access token
+	accessTokenString, accessErr := jwtlocal.CreateToken(12, userID, false, cfg)
+
+	if accessErr != nil {
+		return Tokens{}, accessErr
+	}
+
+	return Tokens{AccessToken: accessTokenString, RefreshToken: refreshTokenString}, nil
+}
+
+// Oauth
+func (s *AuthService) GoogleSignIn(req GoogleSignInReq) (GoogleSignInRes, error) {
+
+	// 1. verify the token with google api
+	googleUserInfo, verifyErr := oauth.VerifyGoogleToken(req.IDToken, s.cfg)
+
+	if verifyErr != nil {
+		return GoogleSignInRes{}, ErrInvalidGoogleIDToken
+	}
+
+	// 2. find userData with google id
+	userData, err := s.userRepo.FindByGoogleID(googleUserInfo.Sub)
+
+	if err != nil && !errors.Is(err, repositories.ErrUserNotFound) {
+		return GoogleSignInRes{}, err
+	}
+
+	// 3. no user found by google id -> create a new one or updates
+	if errors.Is(err, repositories.ErrUserNotFound) {
+
+		// 3.1 check user by email
+		userData, err = s.userRepo.FindByEmail(googleUserInfo.Email)
+
+		if err != nil && !errors.Is(err, repositories.ErrUserNotFound) {
+			return GoogleSignInRes{}, err
+		}
+
+		// 3.2 no user found by email == CREATE A NEW ONE
+		if errors.Is(err, repositories.ErrUserNotFound) {
+			
+			// user models build
+			baseUsername := strings.Split(googleUserInfo.Email, "@")[0]
+
+			userData.FirstName = googleUserInfo.GivenName
+			userData.Username = baseUsername
+			userData.Email = googleUserInfo.Email
+			userData.GoogleID = &googleUserInfo.Sub
+			userData.Picture = &googleUserInfo.Picture
+			userData.IsVerified = true
+
+			if googleUserInfo.FamilyName == "" {
+				userData.LastName = googleUserInfo.GivenName
+			} else {
+				userData.LastName = googleUserInfo.FamilyName
+			}
+
+			// create
+			if userData, err = s.userRepo.CreateUser(userData); err != nil {
+				return GoogleSignInRes{}, err
+			}
+
+
+		} else {
+			// 3.3 found user by email. update the google info columns
+			userData.GoogleID = &googleUserInfo.Sub
+			userData.Picture = &googleUserInfo.Picture
+			userData.IsVerified = true
+
+			if userData, err = s.userRepo.UpdateUser(userData); err != nil {
+				return GoogleSignInRes{}, err
+			}
+		}
+
+	}
+
+	// 4. CREATE THE TOKEN
+	logger.Log.Debug("creating access and refresh token", "user data", userData)
+	tokenResult, err := s.CreateAccessRefreshToken(userData.ID, s.cfg)
+
+	if err != nil {
+		return GoogleSignInRes{}, err
+	}
+
+	return GoogleSignInRes{AccessToken: tokenResult.AccessToken, RefreshToken: tokenResult.RefreshToken, ID: userData.ID, FirstName: userData.FirstName, LastName: userData.LastName, Username: userData.Username}, nil
 }

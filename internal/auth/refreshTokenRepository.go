@@ -1,4 +1,5 @@
-package repositories
+package auth
+
 
 import (
 	"errors"

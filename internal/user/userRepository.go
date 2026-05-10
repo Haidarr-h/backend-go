@@ -1,4 +1,4 @@
-package repositories
+package user
 
 import (
 	"github.com/Haidarr-h/backend-go/models"
@@ -49,7 +49,7 @@ func (r *UserRepository) UpdateUser(user models.User) (models.User, error) {
 	}
 
 	if result.RowsAffected == 0 {
-		logger.Log.Error("UpdateUser query gives no effect", "error", result.Error)
+		logger.Log.Error("UpdateUser query gives no effect")
 		return models.User{}, ErrUserUpdate
 	}
 

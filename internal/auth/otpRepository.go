@@ -1,4 +1,4 @@
-package repositories
+package auth
 
 import (
 	"github.com/Haidarr-h/backend-go/models"
@@ -22,7 +22,7 @@ func (r *OtpRepository) Create(otp models.OtpVerification) (models.OtpVerificati
 
 	// 2. error checks
 	if result.Error != nil {
-		logger.Log.Error("failed to create opt data to database", "error", result.Error)
+		logger.Log.Error("failed to create otp data to database", "error", result.Error)
 		return models.OtpVerification{}, result.Error
 	}
 
@@ -66,7 +66,7 @@ func (r *OtpRepository) Update(otp models.OtpVerification) (models.OtpVerificati
 		WHERE id = ?
 	`
 	result := r.db.Raw(query, otp.Attempts, otp.Used, otp.ID).Scan(&otp)
-	
+
 	// 2. error check
 	if result.Error != nil {
 		logger.Log.Error("update otp query function failed", "error", result.Error)

@@ -1,11 +1,11 @@
-package dto
+package auth
 
 // SIGN UP
 type SignUpRequest struct {
 	Email     string `json:"email" binding:"required,email" example:"haidar@gmail.com"`
 	Password  string `json:"password" binding:"required,min=8,max=24" example:"password123"`
 	Username  string `json:"username" binding:"required,alphanum,min=3,max=24" example:"haidarIron"`
-	FirstName string `json:"firstName" binding:"required,alpha,min=3,max=24" example:"Haidar"`
+	FirstName string `json:"firstName" binding:"required,min=3,max=24" example:"Haidar"`
 	LastName  string `json:"lastName" binding:"required,alpha,min=3,max=24" example:"Hanif"`
 }
 
@@ -19,7 +19,7 @@ type SignUpResponse struct {
 
 // SIGN IN
 type SignInReq struct {
-	Identifier string `json:"identifier" binding:"required,min=3,max=24" example:"haidar@gmail.com"`
+	Identifier string `json:"identifier" binding:"required,min=3,max=320" example:"haidar@gmail.com"`
 	Password   string `json:"password" binding:"required,min=8,max=24" example:"password123"`
 }
 
@@ -51,6 +51,28 @@ type VerifyOTPreq struct {
 }
 
 type ResendOTPreq struct {
-	Email   string `json:"email" binding:"required,email" example:"haidar@gmail.com"`
+	Email string `json:"email" binding:"required,email" example:"haidar@gmail.com"`
 }
 
+// OAUTH
+type GoogleSignInReq struct {
+	IDToken string `json:"id_token" binding:"required"`
+}
+
+type GoogleSignInRes struct {
+	AccessToken  string `json:"accessToken" example:"xxx..."`
+	RefreshToken string `json:"refreshToken" example:"yyyyyy"`
+	ID           uint   `json:"id"`
+	FirstName    string `json:"firstName"`
+	LastName     string `json:"lastName"`
+	Username     string `json:"username"`
+}
+
+type GoogleUserInfo struct {
+	Sub        string `json:"sub"`
+	Email      string `json:"email"`
+	Name       string `json:"name"`
+	Picture    string `json:"picture"`
+	GivenName  string `json:"given_name"`
+	FamilyName string `json:"family_name"`
+}
