@@ -52,6 +52,10 @@ func (r *OtpRepository) FindByEmail(email string) (models.OtpVerification, error
 		return models.OtpVerification{}, result.Error
 	}
 
+	if result.RowsAffected == 0 {
+		return models.OtpVerification{}, ErrEmailNotFound
+	}
+
 	// 3. success return
 	return otp, nil
 }
@@ -64,6 +68,7 @@ func (r *OtpRepository) Update(otp models.OtpVerification) (models.OtpVerificati
 		UPDATE otp_verifications
 		SET attempts = ?, used = ?
 		WHERE id = ?
+		RETURNING *
 	`
 	result := r.db.Raw(query, otp.Attempts, otp.Used, otp.ID).Scan(&otp)
 
@@ -71,6 +76,11 @@ func (r *OtpRepository) Update(otp models.OtpVerification) (models.OtpVerificati
 	if result.Error != nil {
 		logger.Log.Error("update otp query function failed", "error", result.Error)
 		return models.OtpVerification{}, result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		logger.Log.Error("update otp query function failed. no rows updated")
+		return models.OtpVerification{}, ErrOTPUpdate
 	}
 
 	// 3. success response

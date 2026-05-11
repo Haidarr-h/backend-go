@@ -15,20 +15,19 @@ import (
 	oauth "github.com/Haidarr-h/backend-go/pkg/oAuth"
 	"github.com/Haidarr-h/backend-go/pkg/otp"
 	"github.com/Haidarr-h/backend-go/pkg/utils"
-	"github.com/Haidarr-h/backend-go/repositories"
-	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type AuthService struct {
-	userRepo    *user.UserRepository
-	refreshRepo *RefreshTokenRepository
-	otpRepo     *OtpRepository
+	userRepo    user.Repository
+	refreshRepo RefreshRepo
+	otpRepo     OtpRepo
 	cfg         *config.Config
 }
 
-func NewAuthService(authRepo *user.UserRepository, cfg *config.Config, refreshRepo *RefreshTokenRepository, otpRepo *OtpRepository) *AuthService {
-	return &AuthService{userRepo: authRepo, cfg: cfg, refreshRepo: refreshRepo, otpRepo: otpRepo}
+func NewAuthService(userRepo user.Repository, cfg *config.Config, refreshRepo RefreshRepo, otpRepo OtpRepo) *AuthService {
+	return &AuthService{userRepo: userRepo, cfg: cfg, refreshRepo: refreshRepo, otpRepo: otpRepo}
 }
 
 // SIGN UP
@@ -62,7 +61,7 @@ func (s *AuthService) SignUp(req SignUpRequest) (SignUpResponse, error) {
 
 	// 4. Create the user model
 	hashedPassword := string(hash)
-	user := models.User{
+	newUser := models.User{
 		Email:     req.Email,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
@@ -70,34 +69,46 @@ func (s *AuthService) SignUp(req SignUpRequest) (SignUpResponse, error) {
 		Password:  &hashedPassword,
 	}
 
-	// 5. create the user
-	result, err := s.userRepo.CreateUser(user)
-	if err != nil {
-		return SignUpResponse{}, err
-	}
-
-	// 6. generate OTP
+	// 5. generate OTP
 	plainOTP, hashedOTP, otpErr := otp.GenerateOtp()
 
 	if otpErr != nil {
 		return SignUpResponse{}, otpErr
 	}
 
-	// 7. create data at OTP table
-	otpData := models.OtpVerification{
-		UserID:    result.ID,
-		OTPHash:   hashedOTP,
-		ExpiresAt: time.Now().Add(time.Minute * 60),
-		Attempts:  0,
-		Used:      false,
-	}
+	// 6. Create user and otp table
+	var result models.User
 
-	if _, createOtpErr := s.otpRepo.Create(otpData); createOtpErr != nil {
-		return SignUpResponse{}, createOtpErr
+	txErr := s.cfg.DB.Transaction(func(tx *gorm.DB) error {
+		var err error
+
+		result, err = user.NewUserRepository(tx).CreateUser(newUser)
+
+		if err != nil {
+			return err
+		}
+
+		otpData := models.OtpVerification{
+			UserID:    result.ID,
+			OTPHash:   hashedOTP,
+			ExpiresAt: time.Now().Add(time.Minute * 60),
+			Attempts:  0,
+			Used:      false,
+		}
+
+		if _, err = NewOTPRepository(tx).Create(otpData); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if txErr != nil {
+		return SignUpResponse{}, txErr
 	}
 
 	// 8. send OTP to the email
-	if err := otp.SendOTP(user.Email, plainOTP, s.cfg); err != nil {
+	if err := otp.SendOTP(newUser.Email, plainOTP, s.cfg); err != nil {
 		return SignUpResponse{}, err
 	}
 
@@ -119,66 +130,48 @@ func (s *AuthService) SignIn(req SignInReq) (SignInRes, error) {
 	// 1. check sign in by email or username
 	isEmail := utils.IsEmail(req.Identifier)
 
-	var user models.User
+	var foundUser models.User
 	var err error
 
 	// 2. check if user exist
 	if isEmail {
-		user, err = s.userRepo.FindByEmail(req.Identifier)
+		foundUser, err = s.userRepo.FindByEmail(req.Identifier)
 	} else {
-		user, err = s.userRepo.FindByUsername(req.Identifier)
+		foundUser, err = s.userRepo.FindByUsername(req.Identifier)
 	}
 
 	// 3. Error checks
 	if err != nil {
 
-		if errors.Is(err, repositories.ErrUserNotFound) {
+		if errors.Is(err, user.ErrUserNotFound) {
 			return SignInRes{}, ErrInvalidCredentials
 		}
 
 		return SignInRes{}, err
 	}
 
-	if user.ID == 0 {
+	if foundUser.ID == 0 {
 		return SignInRes{}, ErrInvalidCredentials
 	}
 
-	if user.Password == nil {
+	if foundUser.Password == nil {
 		return SignInRes{}, ErrUserGoogleSignIn
 	}
 
 	// 4. Make sure password match
-	if passwordErr := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(req.Password)); passwordErr != nil {
+	if passwordErr := bcrypt.CompareHashAndPassword([]byte(*foundUser.Password), []byte(req.Password)); passwordErr != nil {
 		return SignInRes{}, ErrInvalidCredentials
 	}
 
 	// 5. Create refresh token
-	refreshTokenString, refreshErr := s.CreateToken(24*30, user.ID, true)
+	tokenResult, errTokenCreate := s.createAccessRefreshToken(foundUser.ID)
 
-	if refreshErr != nil {
-		return SignInRes{}, ErrFailedCreateToken
-	}
-
-	// 6. create refresh token in table
-	refreshTokenModel := models.RefreshToken{
-		UserID:    user.ID,
-		Token:     refreshTokenString,
-		ExpiresAt: time.Now().Add(time.Hour * 24 * 30),
-	}
-
-	if _, createErr := s.refreshRepo.Create(&refreshTokenModel); createErr != nil {
-		return SignInRes{}, createErr
-	}
-
-	// 7. create the access token
-	accessTokenString, accessErr := s.CreateToken(12, user.ID, false)
-
-	if accessErr != nil {
-		return SignInRes{}, ErrFailedCreateToken
+	if errTokenCreate != nil {
+		return SignInRes{}, errTokenCreate
 	}
 
 	// 8. send token and success
-	return SignInRes{RefreshToken: refreshTokenString, AccessToken: accessTokenString}, nil
+	return SignInRes{RefreshToken: tokenResult.RefreshToken, AccessToken: tokenResult.AccessToken}, nil
 }
 
 // REFRESH TOKEN
@@ -193,37 +186,17 @@ func (s *AuthService) Refresh(req RefreshTokenReq) (RefreshTokenRes, error) {
 	}
 
 	if result.ExpiresAt.Before(time.Now()) {
-		return RefreshTokenRes{}, errors.New("refresh token is expired")
+		return RefreshTokenRes{}, ErrExpiredToken
 	}
 
 	// 3. create a new refresh token
-	refreshTokenString, refreshErr := s.CreateToken(24*30, result.UserID, true)
+	tokenResult, errTokenCreate := s.createAccessRefreshToken(result.UserID)
 
-	if refreshErr != nil {
-		return RefreshTokenRes{}, ErrFailedCreateToken
+	if errTokenCreate != nil {
+		return RefreshTokenRes{}, errTokenCreate
 	}
 
-	// 4. update the NEW refresh token in table
-	refreshTokenModel := models.RefreshToken{
-		UserID:    result.UserID,
-		Token:     refreshTokenString,
-		ExpiresAt: time.Now().Add(time.Hour * 24 * 30),
-	}
-
-	refreshTokenModel.ID = result.ID
-
-	if _, updateErr := s.refreshRepo.Update(&refreshTokenModel); updateErr != nil {
-		return RefreshTokenRes{}, updateErr
-	}
-
-	// 5. create the access token
-	accessTokenString, accessErr := s.CreateToken(12, result.UserID, false)
-
-	if accessErr != nil {
-		return RefreshTokenRes{}, ErrFailedCreateToken
-	}
-
-	return RefreshTokenRes{AccessToken: accessTokenString, RefreshToken: refreshTokenString}, nil
+	return RefreshTokenRes{AccessToken: tokenResult.AccessToken, RefreshToken: tokenResult.RefreshToken}, nil
 }
 
 // DELETE
@@ -235,36 +208,6 @@ func (s *AuthService) DeleteToken(req RefreshTokenReq) error {
 	}
 
 	return nil
-}
-
-// HELPER FUNCTION
-func (s *AuthService) CreateToken(hour int, userID uint, isRefresh bool) (string, error) {
-
-	// 1. convert the hour to time.duration
-	duration := time.Duration(hour) * time.Hour
-
-	// 2. Create the token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": userID,
-		"exp": time.Now().Add(duration).Unix(),
-	})
-
-	// 3. secret adjustments
-	var secret = []byte(s.cfg.JWTSecret)
-
-	if isRefresh {
-		secret = []byte(s.cfg.RefreshSecret)
-	}
-
-	// 3. signed the token
-	tokenString, err := token.SignedString(secret)
-
-	// 4. error checks
-	if err != nil {
-		return "", err
-	}
-
-	return tokenString, nil
 }
 
 // verify otp
@@ -354,12 +297,12 @@ func (s *AuthService) ResendOTP(req ResendOTPreq) error {
 	return nil
 }
 
-// CreateAccessRefreshToken generates access and refresh tokens
+// createAccessRefreshToken generates access and refresh tokens
 // used for: sign in manual, sign in by google, and refresh
-func (s *AuthService) CreateAccessRefreshToken(userID uint, cfg *config.Config) (Tokens, error) {
+func (s *AuthService) createAccessRefreshToken(userID uint) (Tokens, error) {
 
 	// 1. Generate the refresh token
-	refreshTokenString, refreshErr := jwtlocal.CreateToken(24*30, userID, true, cfg)
+	refreshTokenString, refreshErr := jwtlocal.CreateToken(24*30, userID, true, s.cfg)
 
 	if refreshErr != nil {
 		return Tokens{}, refreshErr
@@ -377,7 +320,7 @@ func (s *AuthService) CreateAccessRefreshToken(userID uint, cfg *config.Config) 
 	}
 
 	// 3. create the access token
-	accessTokenString, accessErr := jwtlocal.CreateToken(12, userID, false, cfg)
+	accessTokenString, accessErr := jwtlocal.CreateToken(12, userID, false, s.cfg)
 
 	if accessErr != nil {
 		return Tokens{}, accessErr
@@ -399,23 +342,23 @@ func (s *AuthService) GoogleSignIn(req GoogleSignInReq) (GoogleSignInRes, error)
 	// 2. find userData with google id
 	userData, err := s.userRepo.FindByGoogleID(googleUserInfo.Sub)
 
-	if err != nil && !errors.Is(err, repositories.ErrUserNotFound) {
+	if err != nil && !errors.Is(err, user.ErrUserNotFound) {
 		return GoogleSignInRes{}, err
 	}
 
 	// 3. no user found by google id -> create a new one or updates
-	if errors.Is(err, repositories.ErrUserNotFound) {
+	if errors.Is(err, user.ErrUserNotFound) {
 
 		// 3.1 check user by email
 		userData, err = s.userRepo.FindByEmail(googleUserInfo.Email)
 
-		if err != nil && !errors.Is(err, repositories.ErrUserNotFound) {
+		if err != nil && !errors.Is(err, user.ErrUserNotFound) {
 			return GoogleSignInRes{}, err
 		}
 
 		// 3.2 no user found by email == CREATE A NEW ONE
-		if errors.Is(err, repositories.ErrUserNotFound) {
-			
+		if errors.Is(err, user.ErrUserNotFound) {
+
 			// user models build
 			baseUsername := strings.Split(googleUserInfo.Email, "@")[0]
 
@@ -437,7 +380,6 @@ func (s *AuthService) GoogleSignIn(req GoogleSignInReq) (GoogleSignInRes, error)
 				return GoogleSignInRes{}, err
 			}
 
-
 		} else {
 			// 3.3 found user by email. update the google info columns
 			userData.GoogleID = &googleUserInfo.Sub
@@ -453,7 +395,7 @@ func (s *AuthService) GoogleSignIn(req GoogleSignInReq) (GoogleSignInRes, error)
 
 	// 4. CREATE THE TOKEN
 	logger.Log.Debug("creating access and refresh token", "user data", userData)
-	tokenResult, err := s.CreateAccessRefreshToken(userData.ID, s.cfg)
+	tokenResult, err := s.createAccessRefreshToken(userData.ID)
 
 	if err != nil {
 		return GoogleSignInRes{}, err
