@@ -27,3 +27,17 @@ var ErrOTPUpdate = errors.New("failed to update otp record")
 var ErrGenerateToken = errors.New("failed to insert refresh token data")
 var ErrExpiredToken = errors.New("refresh token is expired")
 
+// error
+type ErrorRes400 struct {
+	Success bool   `json:"success" example:"false"`
+	Message string `json:"message" example:"failed to process..."`
+	Error   string `json:"error,omitempty" example:"bad request"`
+}
+
+type ErrorRes500 struct {
+	Success bool   `json:"success" example:"false"`
+	Message string `json:"message" example:"failed to process..."`
+	Error   string `json:"error,omitempty" example:"internal server error"`
+}
+
+
