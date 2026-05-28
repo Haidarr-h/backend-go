@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/Haidarr-h/backend-go/config"
+	"github.com/Haidarr-h/backend-go/internal/config"
 	"github.com/gin-gonic/gin"
 )
 

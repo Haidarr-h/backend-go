@@ -1,6 +1,9 @@
-package models
+package user
 
-import "gorm.io/gorm"
+import (
+	"github.com/Haidarr-h/backend-go/internal/routine"
+	"gorm.io/gorm"
+)
 
 type User struct {
 	gorm.Model
@@ -11,6 +14,6 @@ type User struct {
 	GoogleID   *string `gorm:"default:null"`
 	Picture    *string
 	Password   *string
-	Routines   []Routine
+	Routines   []routine.Routine
 	IsVerified bool `gorm:"default:false"`
 }

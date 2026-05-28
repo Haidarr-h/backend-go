@@ -7,9 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Haidarr-h/backend-go/config"
+	"github.com/Haidarr-h/backend-go/internal/config"
 	"github.com/Haidarr-h/backend-go/internal/user"
-	"github.com/Haidarr-h/backend-go/models"
 	jwtlocal "github.com/Haidarr-h/backend-go/pkg/jwtLocal"
 	"github.com/Haidarr-h/backend-go/pkg/logger"
 	oauth "github.com/Haidarr-h/backend-go/pkg/oAuth"
@@ -61,7 +60,7 @@ func (s *AuthService) SignUp(req SignUpRequest) (SignUpResponse, error) {
 
 	// 4. Create the user model
 	hashedPassword := string(hash)
-	newUser := models.User{
+	newUser := user.User{
 		Email:     req.Email,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
@@ -77,7 +76,7 @@ func (s *AuthService) SignUp(req SignUpRequest) (SignUpResponse, error) {
 	}
 
 	// 6. Create user and otp table
-	var result models.User
+	var result user.User
 
 	txErr := s.cfg.DB.Transaction(func(tx *gorm.DB) error {
 		var err error
@@ -88,7 +87,7 @@ func (s *AuthService) SignUp(req SignUpRequest) (SignUpResponse, error) {
 			return err
 		}
 
-		otpData := models.OtpVerification{
+		otpData := OtpVerification{
 			UserID:    result.ID,
 			OTPHash:   hashedOTP,
 			ExpiresAt: time.Now().Add(time.Minute * 60),
@@ -130,7 +129,7 @@ func (s *AuthService) SignIn(req SignInReq) (SignInRes, error) {
 	// 1. check sign in by email or username
 	isEmail := utils.IsEmail(req.Identifier)
 
-	var foundUser models.User
+	var foundUser user.User
 	var err error
 
 	// 2. check if user exist
@@ -309,7 +308,7 @@ func (s *AuthService) createAccessRefreshToken(userID uint) (Tokens, error) {
 	}
 
 	// 2. create new row in the refresh token table
-	refreshTokenModel := models.RefreshToken{
+	refreshTokenModel := RefreshToken{
 		UserID:    userID,
 		Token:     refreshTokenString,
 		ExpiresAt: time.Now().Add(time.Hour * 24 * 30),

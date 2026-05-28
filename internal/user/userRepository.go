@@ -1,7 +1,6 @@
 package user
 
 import (
-	"github.com/Haidarr-h/backend-go/models"
 	"github.com/Haidarr-h/backend-go/pkg/logger"
 	"gorm.io/gorm"
 )
@@ -15,7 +14,7 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 }
 
 // CREATE USER
-func (r *UserRepository) CreateUser(user models.User) (models.User, error) {
+func (r *UserRepository) CreateUser(user User) (User, error) {
 
 	// 1. Create directly
 	// result := r.db.Create(&user)
@@ -24,11 +23,11 @@ func (r *UserRepository) CreateUser(user models.User) (models.User, error) {
 
 	// 2. check error
 	if result.Error != nil {
-		return models.User{}, result.Error
+		return User{}, result.Error
 	}
 
 	if result.RowsAffected == 0 {
-		return models.User{}, ErrUserCreation
+		return User{}, ErrUserCreation
 	}
 
 	// 3. return success
@@ -36,7 +35,7 @@ func (r *UserRepository) CreateUser(user models.User) (models.User, error) {
 }
 
 // UPDATE USER
-func (r *UserRepository) UpdateUser(user models.User) (models.User, error) {
+func (r *UserRepository) UpdateUser(user User) (User, error) {
 
 	// 1. query
 	query := "UPDATE users SET google_id = ?, picture = ?, is_verified = ? WHERE id = ? RETURNING *"
@@ -45,12 +44,12 @@ func (r *UserRepository) UpdateUser(user models.User) (models.User, error) {
 	// 2. error check
 	if result.Error != nil {
 		logger.Log.Error("UpdateUser query function failed", "error", result.Error)
-		return models.User{}, result.Error
+		return User{}, result.Error
 	}
 
 	if result.RowsAffected == 0 {
 		logger.Log.Error("UpdateUser query gives no effect")
-		return models.User{}, ErrUserUpdate
+		return User{}, ErrUserUpdate
 	}
 
 	// 3. success
@@ -58,9 +57,9 @@ func (r *UserRepository) UpdateUser(user models.User) (models.User, error) {
 }
 
 // FIND USER BY EMAIL
-func (r *UserRepository) FindByEmail(email string) (models.User, error) {
+func (r *UserRepository) FindByEmail(email string) (User, error) {
 
-	var user models.User
+	var user User
 
 	// 1. Search to database
 	result := r.db.Raw("SELECT * FROM users WHERE email = ? LIMIT 1", email).Scan(&user)
@@ -68,11 +67,11 @@ func (r *UserRepository) FindByEmail(email string) (models.User, error) {
 
 	// 2. Check error
 	if result.Error != nil {
-		return models.User{}, result.Error
+		return User{}, result.Error
 	}
 
 	if result.RowsAffected == 0 {
-		return models.User{}, ErrUserNotFound
+		return User{}, ErrUserNotFound
 	}
 
 	// 3. return if found
@@ -80,9 +79,9 @@ func (r *UserRepository) FindByEmail(email string) (models.User, error) {
 }
 
 // FIND USER BY USERNAME
-func (r *UserRepository) FindByUsername(username string) (models.User, error) {
+func (r *UserRepository) FindByUsername(username string) (User, error) {
 
-	var user models.User
+	var user User
 
 	// 1. Search to database
 	query := "SELECT * FROM users WHERE username = ?"
@@ -91,12 +90,12 @@ func (r *UserRepository) FindByUsername(username string) (models.User, error) {
 	// 2. Check error
 	if result.Error != nil {
 		logger.Log.Error("FindByUsername query function failed", "error", result.Error, "username", username)
-		return models.User{}, result.Error
+		return User{}, result.Error
 	}
 
 	// check empty
 	if result.RowsAffected == 0 {
-		return models.User{}, ErrUserNotFound
+		return User{}, ErrUserNotFound
 	}
 
 	// 3. return if found
@@ -104,9 +103,9 @@ func (r *UserRepository) FindByUsername(username string) (models.User, error) {
 }
 
 // FIND USER BY GOOGLE ID
-func (r *UserRepository) FindByGoogleID(googleID string) (models.User, error) {
+func (r *UserRepository) FindByGoogleID(googleID string) (User, error) {
 
-	var user models.User
+	var user User
 
 	// 1. Search to database
 	query := "SELECT * FROM users WHERE google_id = ? LIMIT 1"
@@ -115,12 +114,12 @@ func (r *UserRepository) FindByGoogleID(googleID string) (models.User, error) {
 	// 2. Check error
 	if result.Error != nil {
 		logger.Log.Error("FindByGoogleID query function failed", "error", result.Error, "id", googleID)
-		return models.User{}, result.Error
+		return User{}, result.Error
 	}
 
 	// check empty
 	if result.RowsAffected == 0 {
-		return models.User{}, ErrUserNotFound
+		return User{}, ErrUserNotFound
 	}
 
 	// 3. return if found

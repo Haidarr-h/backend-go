@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 
-	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/controllers"
 	_ "github.com/Haidarr-h/backend-go/docs"
 	"github.com/Haidarr-h/backend-go/internal/auth"
+	"github.com/Haidarr-h/backend-go/internal/config"
+	"github.com/Haidarr-h/backend-go/internal/exercise"
+	"github.com/Haidarr-h/backend-go/internal/migrate"
 	"github.com/Haidarr-h/backend-go/internal/user"
 	"github.com/Haidarr-h/backend-go/pkg/logger"
 	"github.com/Haidarr-h/backend-go/routes"
@@ -64,7 +66,14 @@ func main() {
 	authService := auth.NewAuthService(userRepo, cfg, refreshRepo, otpRepo)
 	authHandler := auth.NewAuthHandler(authService)
 
-	routes.RegisterRoutes(r, cfg, authHandler)
+	// EXERCISE ROUTE
+	exerciseRepo := exercise.NewExerciseRepository(cfg.DB)
+	exerciseService := exercise.NewExerciseService(exerciseRepo, cfg)
+	exerciseHandler := exercise.NewExerciseHandler(exerciseService)
 
+	routes.RegisterRoutes(r, cfg, authHandler, exerciseHandler)
+
+	migrate.Run(cfg.DB)
 	r.Run(":" + cfg.Port)
+	
 }

@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/dto"
+	"github.com/Haidarr-h/backend-go/internal/config"
 )
 
 func VerifyGoogleToken(idToken string, cfg *config.Config) (*dto.GoogleUserInfo, error) {

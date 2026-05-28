@@ -1,10 +1,8 @@
 package auth
 
-
 import (
 	"errors"
 
-	"github.com/Haidarr-h/backend-go/models"
 	"gorm.io/gorm"
 )
 
@@ -17,7 +15,7 @@ func NewRefreshTokenRepository(db *gorm.DB) *RefreshTokenRepository {
 }
 
 // CREATE
-func (r *RefreshTokenRepository) Create(refreshToken *models.RefreshToken) (*models.RefreshToken, error) {
+func (r *RefreshTokenRepository) Create(refreshToken *RefreshToken) (*RefreshToken, error) {
 
 	// 1. Create directly
 	query := "INSERT INTO refresh_tokens (user_id, token, expires_at, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW()) RETURNING *"
@@ -38,9 +36,9 @@ func (r *RefreshTokenRepository) Create(refreshToken *models.RefreshToken) (*mod
 }
 
 // FINDBYTOKEN
-func (r *RefreshTokenRepository) FindByToken(token string) (*models.RefreshToken, error) {
+func (r *RefreshTokenRepository) FindByToken(token string) (*RefreshToken, error) {
 
-	var refreshToken models.RefreshToken
+	var refreshToken RefreshToken
 
 	// 1. Find
 	query := "SELECT * FROM refresh_tokens WHERE token = ? LIMIT 1"
@@ -60,7 +58,7 @@ func (r *RefreshTokenRepository) FindByToken(token string) (*models.RefreshToken
 }
 
 // UPDATE
-func (r *RefreshTokenRepository) Update(refreshToken *models.RefreshToken) (*models.RefreshToken, error) {
+func (r *RefreshTokenRepository) Update(refreshToken *RefreshToken) (*RefreshToken, error) {
 
 	// 1. update direcly
 	query := "UPDATE refresh_tokens SET token = ?, expires_at = ?, updated_at = NOW() WHERE id = ? RETURNING *"

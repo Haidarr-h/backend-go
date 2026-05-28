@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Haidarr-h/backend-go/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -23,14 +22,6 @@ func InitDB() *gorm.DB {
 	}
 
 	fmt.Println("Database connection success")
-
-	if os.Getenv("AUTO_MIGRATE") == "true" {
-		if err = db.AutoMigrate(&models.User{}, &models.Exercise{}, &models.Routine{}, &models.RoutineExercises{}, &models.RefreshToken{}, &models.OtpVerification{}); err != nil {
-			fmt.Println("Auto migration error:", err)
-		} else {
-			fmt.Println("Auto migration success:")
-		}
-	}
 
 	return db
 }

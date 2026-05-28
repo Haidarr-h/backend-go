@@ -1,14 +1,12 @@
 package user
 
-import "github.com/Haidarr-h/backend-go/models"
-
 type Repository interface {
-    CreateUser(user models.User) (models.User, error)
-    UpdateUser(user models.User) (models.User, error)
-    FindByEmail(email string) (models.User, error)
-    FindByUsername(username string) (models.User, error)
-    FindByGoogleID(googleID string) (models.User, error)
-    ExistByEmail(email string) (bool, error)
-    ExistByUsername(username string) (bool, error)
-    Verify(userID uint) error
+	CreateUser(user User) (User, error)
+	UpdateUser(user User) (User, error)
+	FindByEmail(email string) (User, error)
+	FindByUsername(username string) (User, error)
+	FindByGoogleID(googleID string) (User, error)
+	ExistByEmail(email string) (bool, error)
+	ExistByUsername(username string) (bool, error)
+	Verify(userID uint) error
 }

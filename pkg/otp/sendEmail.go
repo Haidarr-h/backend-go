@@ -1,7 +1,7 @@
 package otp
 
 import (
-	"github.com/Haidarr-h/backend-go/config"
+	"github.com/Haidarr-h/backend-go/internal/config"
 	"github.com/Haidarr-h/backend-go/pkg/logger"
 	"github.com/resend/resend-go/v3"
 )
