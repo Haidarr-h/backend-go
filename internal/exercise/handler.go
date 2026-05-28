@@ -20,7 +20,7 @@ func (h *ExerciseHandler) RegisterRoutes(rg *gin.RouterGroup, cfg *config.Config
 	exercise := rg.Group("/exercises")
 	{
 		exercise.GET("/", h.GetExercises)
-		exercise.GET("/{id}", h.GetExercise)
+		exercise.GET("/:id", h.GetExercise)
 	}
 }
 
