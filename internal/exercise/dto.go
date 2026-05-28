@@ -20,3 +20,13 @@ type ExerciseResponse struct {
 	Category         string         `json:"category"`
 	VideoURL         string         `json:"videoUrl"`
 }
+
+type ExerciseFilterParams struct {
+	MuscleGroup string
+	Category    string
+	Level     string
+	Equipment string
+	Mechanic  string
+	Limit     int
+	Offset    int
+}

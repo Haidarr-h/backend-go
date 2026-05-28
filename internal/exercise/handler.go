@@ -33,7 +33,37 @@ func (h *ExerciseHandler) RegisterRoutes(rg *gin.RouterGroup, cfg *config.Config
 // @Router       /api/v1/exercises [get]
 func (h *ExerciseHandler) GetExercises(c *gin.Context) {
 
-	exercises, err := h.service.GetExercises()
+	category := c.Query("category")
+	equipment := c.Query("equipment")
+	level := c.Query("level")
+	mechanic := c.Query("equipmmechanicent")
+	muscleGroup := c.Query("muscleGroup")
+	limit := c.DefaultQuery("limit", "0")
+	offset := c.DefaultQuery("offset", "0")
+
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		response.BadRequest(c, "invalid limit value", "invalid limit")
+		return
+	}
+
+	offsetInt, err := strconv.Atoi(offset)
+	if err != nil {
+		response.BadRequest(c, "invalid offset value", "invalid offset")
+		return
+	}
+
+	filterParams := ExerciseFilterParams{
+		Category:    category,
+		MuscleGroup: muscleGroup,
+		Level:       level,
+		Equipment:   equipment,
+		Mechanic:    mechanic,
+		Limit:       limitInt,
+		Offset:      offsetInt,
+	}
+
+	exercises, err := h.service.GetExercises(filterParams)
 
 	if err != nil {
 		response.InternalError(c, "Failed to get all exercises", err.Error())

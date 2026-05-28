@@ -1,11 +1,11 @@
 package exercise
 
 type Service interface {
-	GetExercises() ([]ExerciseResponse, error)
+	GetExercises(params ExerciseFilterParams) ([]ExerciseResponse, error)
 	GetExercise(req ExerciseRequest) (ExerciseResponse, error)
 }
 
 type Repo interface {
-	FindAll() ([]Exercise, error)
+	FindAll(params ExerciseFilterParams) ([]Exercise, error)
 	FindByID(id uint) (Exercise, error)
 }

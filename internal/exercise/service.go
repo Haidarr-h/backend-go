@@ -11,9 +11,9 @@ func NewExerciseService(repo Repo, cfg *config.Config) *ExerciseService {
 	return &ExerciseService{repo: repo, cfg: cfg}
 }
 
-func (s *ExerciseService) GetExercises() ([]ExerciseResponse, error) {
+func (s *ExerciseService) GetExercises(params ExerciseFilterParams) ([]ExerciseResponse, error) {
 
-	exercises, err := s.repo.FindAll()
+	exercises, err := s.repo.FindAll(params)
 
 	if err != nil {
 		return []ExerciseResponse{}, err
