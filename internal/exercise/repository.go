@@ -42,7 +42,7 @@ func (r *ExerciseRepository) FindAll(params ExerciseFilterParams) ([]Exercise, e
 	}
 
 	if params.MuscleGroup != "" {
-		query += " AND muscle_group = ?"
+		query += " AND (? = ANY(primary_muscles) OR ? = ANY(secondary_muscles))"
 		args = append(args, params.MuscleGroup)
 	}
 
