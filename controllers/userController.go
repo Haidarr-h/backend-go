@@ -5,6 +5,7 @@ import (
 	"github.com/Haidarr-h/backend-go/models"
 	"github.com/Haidarr-h/backend-go/pkg/response"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type updateReq struct {
@@ -113,9 +114,31 @@ func DeleteUser(c *gin.Context, cfg *config.Config) {
 		return
 	}
 
-	// 3. Delete
-	if err := cfg.DB.Delete(&user, id).Error; err != nil {
-		response.InternalError(c, "Failed to delete user", err.Error())
+	// 3. Delete all associated records + user in one transaction
+	txErr := cfg.DB.Transaction(func(tx *gorm.DB) error {
+		// routine_exercises must go first (FK → routines)
+		routineIDs := tx.Model(&models.Routine{}).Select("id").Where("user_id = ?", id)
+		if err := tx.Unscoped().Where("routine_id IN (?)", routineIDs).Delete(&models.RoutineExercises{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Unscoped().Where("user_id = ?", id).Delete(&models.Routine{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Unscoped().Where("user_id = ?", id).Delete(&models.RefreshToken{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Unscoped().Where("user_id = ?", id).Delete(&models.OtpVerification{}).Error; err != nil {
+			return err
+		}
+
+		return tx.Delete(&user).Error
+	})
+
+	if txErr != nil {
+		response.InternalError(c, "Failed to delete user", txErr.Error())
 		return
 	}
 
