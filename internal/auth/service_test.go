@@ -10,6 +10,7 @@ import (
 	"github.com/Haidarr-h/backend-go/config"
 	"github.com/Haidarr-h/backend-go/internal/user"
 	"github.com/Haidarr-h/backend-go/models"
+	"github.com/Haidarr-h/backend-go/pkg/cache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/crypto/bcrypt"
@@ -60,21 +61,6 @@ func (m *mockUserRepo) Verify(userID uint) error {
 	return args.Error(0)
 }
 
-type mockOtpRepo struct{ mock.Mock }
-
-func (m *mockOtpRepo) Create(otp models.OtpVerification) (models.OtpVerification, error) {
-	args := m.Called(otp)
-	return args.Get(0).(models.OtpVerification), args.Error(1)
-}
-func (m *mockOtpRepo) FindByEmail(email string) (models.OtpVerification, error) {
-	args := m.Called(email)
-	return args.Get(0).(models.OtpVerification), args.Error(1)
-}
-func (m *mockOtpRepo) Update(otp models.OtpVerification) (models.OtpVerification, error) {
-	args := m.Called(otp)
-	return args.Get(0).(models.OtpVerification), args.Error(1)
-}
-
 type mockRefreshRepo struct{ mock.Mock }
 
 func (m *mockRefreshRepo) Create(token *models.RefreshToken) (*models.RefreshToken, error) {
@@ -98,11 +84,14 @@ func (m *mockRefreshRepo) DeleteByToken(token string) error {
 // Helpers
 // ---------------------------------------------------------------------------
 
-func newTestService(ur *mockUserRepo, rr *mockRefreshRepo, or *mockOtpRepo) *AuthService {
+func newTestService(ur *mockUserRepo, rr *mockRefreshRepo, rc *cache.RegistrationCache) *AuthService {
+	if rc == nil {
+		rc = cache.NewRegistrationCache()
+	}
 	return NewAuthService(ur, &config.Config{
 		JWTSecret:     "test-jwt-secret-32-bytes-padding!",
 		RefreshSecret: "test-refresh-secret-32-bytes-pad!",
-	}, rr, or)
+	}, rr, rc)
 }
 
 func hashedTestPassword(plain string) string {
@@ -119,7 +108,7 @@ func TestSignUp(t *testing.T) {
 		ur := &mockUserRepo{}
 		ur.On("ExistByEmail", "test@example.com").Return(true, nil)
 
-		svc := newTestService(ur, &mockRefreshRepo{}, &mockOtpRepo{})
+		svc := newTestService(ur, &mockRefreshRepo{}, nil)
 		_, err := svc.SignUp(SignUpRequest{
 			Email: "test@example.com", Password: "password123",
 			Username: "testuser", FirstName: "Test", LastName: "User",
@@ -134,7 +123,7 @@ func TestSignUp(t *testing.T) {
 		ur.On("ExistByEmail", "test@example.com").Return(false, nil)
 		ur.On("ExistByUsername", "testuser").Return(true, nil)
 
-		svc := newTestService(ur, &mockRefreshRepo{}, &mockOtpRepo{})
+		svc := newTestService(ur, &mockRefreshRepo{}, nil)
 		_, err := svc.SignUp(SignUpRequest{
 			Email: "test@example.com", Password: "password123",
 			Username: "testuser", FirstName: "Test", LastName: "User",
@@ -149,7 +138,7 @@ func TestSignUp(t *testing.T) {
 		dbErr := errors.New("db error")
 		ur.On("ExistByEmail", "test@example.com").Return(false, dbErr)
 
-		svc := newTestService(ur, &mockRefreshRepo{}, &mockOtpRepo{})
+		svc := newTestService(ur, &mockRefreshRepo{}, nil)
 		_, err := svc.SignUp(SignUpRequest{
 			Email: "test@example.com", Password: "password123",
 			Username: "testuser", FirstName: "Test", LastName: "User",
@@ -169,7 +158,7 @@ func TestSignIn(t *testing.T) {
 		ur := &mockUserRepo{}
 		ur.On("FindByEmail", "test@example.com").Return(models.User{}, user.ErrUserNotFound)
 
-		svc := newTestService(ur, &mockRefreshRepo{}, &mockOtpRepo{})
+		svc := newTestService(ur, &mockRefreshRepo{}, nil)
 		_, err := svc.SignIn(SignInReq{Identifier: "test@example.com", Password: "password123"})
 
 		assert.ErrorIs(t, err, ErrInvalidCredentials)
@@ -180,7 +169,7 @@ func TestSignIn(t *testing.T) {
 		ur := &mockUserRepo{}
 		ur.On("FindByUsername", "testuser").Return(models.User{}, user.ErrUserNotFound)
 
-		svc := newTestService(ur, &mockRefreshRepo{}, &mockOtpRepo{})
+		svc := newTestService(ur, &mockRefreshRepo{}, nil)
 		_, err := svc.SignIn(SignInReq{Identifier: "testuser", Password: "password123"})
 
 		assert.ErrorIs(t, err, ErrInvalidCredentials)
@@ -191,7 +180,7 @@ func TestSignIn(t *testing.T) {
 		ur := &mockUserRepo{}
 		ur.On("FindByEmail", "google@example.com").Return(models.User{Model: gorm.Model{ID: 1}, Password: nil}, nil)
 
-		svc := newTestService(ur, &mockRefreshRepo{}, &mockOtpRepo{})
+		svc := newTestService(ur, &mockRefreshRepo{}, nil)
 		_, err := svc.SignIn(SignInReq{Identifier: "google@example.com", Password: "password123"})
 
 		assert.ErrorIs(t, err, ErrUserGoogleSignIn)
@@ -203,7 +192,7 @@ func TestSignIn(t *testing.T) {
 		ur := &mockUserRepo{}
 		ur.On("FindByEmail", "test@example.com").Return(models.User{Model: gorm.Model{ID: 1}, Password: &pass}, nil)
 
-		svc := newTestService(ur, &mockRefreshRepo{}, &mockOtpRepo{})
+		svc := newTestService(ur, &mockRefreshRepo{}, nil)
 		_, err := svc.SignIn(SignInReq{Identifier: "test@example.com", Password: "wrongpassword"})
 
 		assert.ErrorIs(t, err, ErrInvalidCredentials)
@@ -217,7 +206,7 @@ func TestSignIn(t *testing.T) {
 		ur.On("FindByEmail", "test@example.com").Return(models.User{Model: gorm.Model{ID: 1}, Password: &pass}, nil)
 		rr.On("Create", mock.AnythingOfType("*models.RefreshToken")).Return(&models.RefreshToken{Model: gorm.Model{ID: 1}}, nil)
 
-		svc := newTestService(ur, rr, &mockOtpRepo{})
+		svc := newTestService(ur, rr, nil)
 		res, err := svc.SignIn(SignInReq{Identifier: "test@example.com", Password: "password123"})
 
 		assert.NoError(t, err)
@@ -234,7 +223,7 @@ func TestSignIn(t *testing.T) {
 		ur.On("FindByUsername", "testuser").Return(models.User{Model: gorm.Model{ID: 2}, Password: &pass}, nil)
 		rr.On("Create", mock.AnythingOfType("*models.RefreshToken")).Return(&models.RefreshToken{Model: gorm.Model{ID: 1}}, nil)
 
-		svc := newTestService(ur, rr, &mockOtpRepo{})
+		svc := newTestService(ur, rr, nil)
 		res, err := svc.SignIn(SignInReq{Identifier: "testuser", Password: "password123"})
 
 		assert.NoError(t, err)
@@ -252,7 +241,7 @@ func TestSignIn(t *testing.T) {
 		ur.On("FindByEmail", "test@example.com").Return(models.User{Model: gorm.Model{ID: 1}, Password: &pass}, nil)
 		rr.On("Create", mock.AnythingOfType("*models.RefreshToken")).Return(&models.RefreshToken{}, dbErr)
 
-		svc := newTestService(ur, rr, &mockOtpRepo{})
+		svc := newTestService(ur, rr, nil)
 		_, err := svc.SignIn(SignInReq{Identifier: "test@example.com", Password: "password123"})
 
 		assert.Error(t, err)
@@ -271,7 +260,7 @@ func TestRefresh(t *testing.T) {
 		notFoundErr := errors.New("failed to find refresh token")
 		rr.On("FindByToken", "bad-token").Return(&models.RefreshToken{}, notFoundErr)
 
-		svc := newTestService(&mockUserRepo{}, rr, &mockOtpRepo{})
+		svc := newTestService(&mockUserRepo{}, rr, nil)
 		_, err := svc.Refresh(RefreshTokenReq{RefreshToken: "bad-token"})
 
 		assert.Error(t, err)
@@ -283,7 +272,7 @@ func TestRefresh(t *testing.T) {
 		expired := &models.RefreshToken{Model: gorm.Model{ID: 1}, UserID: 1, ExpiresAt: time.Now().Add(-time.Hour)}
 		rr.On("FindByToken", "expired-token").Return(expired, nil)
 
-		svc := newTestService(&mockUserRepo{}, rr, &mockOtpRepo{})
+		svc := newTestService(&mockUserRepo{}, rr, nil)
 		_, err := svc.Refresh(RefreshTokenReq{RefreshToken: "expired-token"})
 
 		assert.ErrorIs(t, err, ErrExpiredToken)
@@ -296,7 +285,7 @@ func TestRefresh(t *testing.T) {
 		rr.On("FindByToken", "valid-token").Return(valid, nil)
 		rr.On("Create", mock.AnythingOfType("*models.RefreshToken")).Return(&models.RefreshToken{Model: gorm.Model{ID: 2}}, nil)
 
-		svc := newTestService(&mockUserRepo{}, rr, &mockOtpRepo{})
+		svc := newTestService(&mockUserRepo{}, rr, nil)
 		res, err := svc.Refresh(RefreshTokenReq{RefreshToken: "valid-token"})
 
 		assert.NoError(t, err)
@@ -315,7 +304,7 @@ func TestDeleteToken(t *testing.T) {
 		rr := &mockRefreshRepo{}
 		rr.On("DeleteByToken", "some-token").Return(errors.New("not found"))
 
-		svc := newTestService(&mockUserRepo{}, rr, &mockOtpRepo{})
+		svc := newTestService(&mockUserRepo{}, rr, nil)
 		err := svc.DeleteToken(RefreshTokenReq{RefreshToken: "some-token"})
 
 		assert.Error(t, err)
@@ -326,7 +315,7 @@ func TestDeleteToken(t *testing.T) {
 		rr := &mockRefreshRepo{}
 		rr.On("DeleteByToken", "some-token").Return(nil)
 
-		svc := newTestService(&mockUserRepo{}, rr, &mockOtpRepo{})
+		svc := newTestService(&mockUserRepo{}, rr, nil)
 		err := svc.DeleteToken(RefreshTokenReq{RefreshToken: "some-token"})
 
 		assert.NoError(t, err)
@@ -339,100 +328,83 @@ func TestDeleteToken(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestVerifyOTP(t *testing.T) {
-	t.Run("otp record not found", func(t *testing.T) {
-		or := &mockOtpRepo{}
-		or.On("FindByEmail", "test@example.com").Return(models.OtpVerification{}, ErrEmailNotFound)
-
-		svc := newTestService(&mockUserRepo{}, &mockRefreshRepo{}, or)
+	t.Run("no pending registration in cache", func(t *testing.T) {
+		svc := newTestService(&mockUserRepo{}, &mockRefreshRepo{}, nil)
 		_, err := svc.VerifyOTP(VerifyOTPreq{Email: "test@example.com", OtpCode: "123456"})
 
-		assert.ErrorIs(t, err, ErrEmailNotFound)
-		or.AssertExpectations(t)
+		assert.ErrorIs(t, err, ErrPendingRegistrationNotFound)
 	})
 
 	t.Run("too many attempts", func(t *testing.T) {
-		or := &mockOtpRepo{}
-		or.On("FindByEmail", "test@example.com").Return(models.OtpVerification{
-			Attempts: 5, ExpiresAt: time.Now().Add(time.Hour),
-		}, nil)
+		rc := cache.NewRegistrationCache()
+		rc.Set("test@example.com", cache.PendingRegistration{
+			Email: "test@example.com", OTPHash: "somehash",
+			ExpiresAt: time.Now().Add(time.Hour), Attempts: 5,
+		})
 
-		svc := newTestService(&mockUserRepo{}, &mockRefreshRepo{}, or)
+		svc := newTestService(&mockUserRepo{}, &mockRefreshRepo{}, rc)
 		_, err := svc.VerifyOTP(VerifyOTPreq{Email: "test@example.com", OtpCode: "123456"})
 
 		assert.ErrorIs(t, err, ErrInvalidOTPAttempts)
-		or.AssertExpectations(t)
 	})
 
 	t.Run("otp expired", func(t *testing.T) {
-		or := &mockOtpRepo{}
-		or.On("FindByEmail", "test@example.com").Return(models.OtpVerification{
-			Attempts: 0, ExpiresAt: time.Now().Add(-time.Minute),
-		}, nil)
+		rc := cache.NewRegistrationCache()
+		rc.Set("test@example.com", cache.PendingRegistration{
+			Email: "test@example.com", OTPHash: "somehash",
+			ExpiresAt: time.Now().Add(-time.Minute), Attempts: 0,
+		})
 
-		svc := newTestService(&mockUserRepo{}, &mockRefreshRepo{}, or)
+		svc := newTestService(&mockUserRepo{}, &mockRefreshRepo{}, rc)
 		_, err := svc.VerifyOTP(VerifyOTPreq{Email: "test@example.com", OtpCode: "123456"})
 
 		assert.ErrorIs(t, err, ErrOTPExpired)
-		or.AssertExpectations(t)
-	})
-
-	t.Run("otp already used", func(t *testing.T) {
-		or := &mockOtpRepo{}
-		or.On("FindByEmail", "test@example.com").Return(models.OtpVerification{
-			Attempts: 0, ExpiresAt: time.Now().Add(time.Hour), Used: true,
-		}, nil)
-
-		svc := newTestService(&mockUserRepo{}, &mockRefreshRepo{}, or)
-		_, err := svc.VerifyOTP(VerifyOTPreq{Email: "test@example.com", OtpCode: "123456"})
-
-		assert.ErrorIs(t, err, ErrInvalidOTPUsed)
-		or.AssertExpectations(t)
 	})
 
 	t.Run("wrong otp code increments attempts", func(t *testing.T) {
-		or := &mockOtpRepo{}
-		record := models.OtpVerification{
-			Model: gorm.Model{ID: 1}, UserID: 1, OTPHash: "wronghash",
-			ExpiresAt: time.Now().Add(time.Hour), Attempts: 0, Used: false,
-		}
-		updated := record
-		updated.Attempts = 1
+		rc := cache.NewRegistrationCache()
+		rc.Set("test@example.com", cache.PendingRegistration{
+			Email: "test@example.com", OTPHash: "wronghash",
+			ExpiresAt: time.Now().Add(time.Hour), Attempts: 0,
+		})
 
-		or.On("FindByEmail", "test@example.com").Return(record, nil)
-		or.On("Update", updated).Return(updated, nil)
-
-		svc := newTestService(&mockUserRepo{}, &mockRefreshRepo{}, or)
+		svc := newTestService(&mockUserRepo{}, &mockRefreshRepo{}, rc)
 		_, err := svc.VerifyOTP(VerifyOTPreq{Email: "test@example.com", OtpCode: "000000"})
 
 		assert.ErrorIs(t, err, ErrInvalidOTP)
-		or.AssertExpectations(t)
+
+		// attempts should have been incremented in cache
+		pending, _ := rc.Get("test@example.com")
+		assert.Equal(t, 1, pending.Attempts)
 	})
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("success creates user in db and removes from cache", func(t *testing.T) {
 		code := "123456"
 		hash := computeOTPHash(code)
-		or := &mockOtpRepo{}
+		hashedPw := hashedTestPassword("password123")
+
+		rc := cache.NewRegistrationCache()
+		rc.Set("test@example.com", cache.PendingRegistration{
+			Email: "test@example.com", FirstName: "Test", LastName: "User",
+			Username: "testuser", HashedPassword: hashedPw,
+			OTPHash: hash, ExpiresAt: time.Now().Add(time.Hour), Attempts: 0,
+		})
+
 		ur := &mockUserRepo{}
+		ur.On("CreateUser", mock.MatchedBy(func(u models.User) bool {
+			return u.Email == "test@example.com" && u.IsVerified
+		})).Return(models.User{Model: gorm.Model{ID: 1}}, nil)
 
-		record := models.OtpVerification{
-			Model: gorm.Model{ID: 1}, UserID: 1, OTPHash: hash,
-			ExpiresAt: time.Now().Add(time.Hour), Attempts: 0, Used: false,
-		}
-		updated := record
-		updated.Attempts = 1
-		updated.Used = true
-
-		or.On("FindByEmail", "test@example.com").Return(record, nil)
-		or.On("Update", updated).Return(updated, nil)
-		ur.On("Verify", uint(1)).Return(nil)
-
-		svc := newTestService(ur, &mockRefreshRepo{}, or)
+		svc := newTestService(ur, &mockRefreshRepo{}, rc)
 		ok, err := svc.VerifyOTP(VerifyOTPreq{Email: "test@example.com", OtpCode: code})
 
 		assert.NoError(t, err)
 		assert.True(t, ok)
-		or.AssertExpectations(t)
 		ur.AssertExpectations(t)
+
+		// entry should be removed from cache
+		_, found := rc.Get("test@example.com")
+		assert.False(t, found)
 	})
 }
 
@@ -441,29 +413,10 @@ func TestVerifyOTP(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestResendOTP(t *testing.T) {
-	t.Run("email not found", func(t *testing.T) {
-		or := &mockOtpRepo{}
-		or.On("FindByEmail", "notfound@example.com").Return(models.OtpVerification{}, ErrEmailNotFound)
-
-		svc := newTestService(&mockUserRepo{}, &mockRefreshRepo{}, or)
+	t.Run("no pending registration in cache", func(t *testing.T) {
+		svc := newTestService(&mockUserRepo{}, &mockRefreshRepo{}, nil)
 		err := svc.ResendOTP(ResendOTPreq{Email: "notfound@example.com"})
 
-		assert.ErrorIs(t, err, ErrEmailNotFound)
-		or.AssertExpectations(t)
-	})
-
-	t.Run("otp create fails", func(t *testing.T) {
-		or := &mockOtpRepo{}
-		record := models.OtpVerification{Model: gorm.Model{ID: 1}, UserID: 1}
-		dbErr := errors.New("db error")
-
-		or.On("FindByEmail", "test@example.com").Return(record, nil)
-		or.On("Create", mock.AnythingOfType("models.OtpVerification")).Return(models.OtpVerification{}, dbErr)
-
-		svc := newTestService(&mockUserRepo{}, &mockRefreshRepo{}, or)
-		err := svc.ResendOTP(ResendOTPreq{Email: "test@example.com"})
-
-		assert.Error(t, err)
-		or.AssertExpectations(t)
+		assert.ErrorIs(t, err, ErrPendingRegistrationNotFound)
 	})
 }

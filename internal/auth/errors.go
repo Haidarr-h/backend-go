@@ -21,6 +21,7 @@ var ErrInvalidOTPUsed = errors.New("verification code has already been used, ple
 var ErrInvalidOTP = errors.New("invalid otp code")
 var ErrEmailNotFound = errors.New("email not found")
 var ErrOTPUpdate = errors.New("failed to update otp record")
+var ErrPendingRegistrationNotFound = errors.New("no pending registration found for this email, please sign up first")
 
 
 // refresh token repo

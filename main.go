@@ -8,6 +8,7 @@ import (
 	_ "github.com/Haidarr-h/backend-go/docs"
 	"github.com/Haidarr-h/backend-go/internal/auth"
 	"github.com/Haidarr-h/backend-go/internal/user"
+	"github.com/Haidarr-h/backend-go/pkg/cache"
 	"github.com/Haidarr-h/backend-go/pkg/logger"
 	"github.com/Haidarr-h/backend-go/routes"
 	"github.com/gin-contrib/cors"
@@ -60,8 +61,9 @@ func main() {
 	// AUTH ROUTE
 	userRepo := user.NewUserRepository(cfg.DB)
 	refreshRepo := auth.NewRefreshTokenRepository(cfg.DB)
-	otpRepo := auth.NewOTPRepository(cfg.DB)
-	authService := auth.NewAuthService(userRepo, cfg, refreshRepo, otpRepo)
+	registrationCache := cache.NewRegistrationCache()
+	registrationCache.StartCleanup(make(chan struct{}))
+	authService := auth.NewAuthService(userRepo, cfg, refreshRepo, registrationCache)
 	authHandler := auth.NewAuthHandler(authService)
 
 	routes.RegisterRoutes(r, cfg, authHandler)

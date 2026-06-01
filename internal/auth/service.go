@@ -11,29 +11,29 @@ import (
 	"github.com/Haidarr-h/backend-go/internal/user"
 	"github.com/Haidarr-h/backend-go/models"
 	jwtlocal "github.com/Haidarr-h/backend-go/pkg/jwtLocal"
+	"github.com/Haidarr-h/backend-go/pkg/cache"
 	"github.com/Haidarr-h/backend-go/pkg/logger"
 	oauth "github.com/Haidarr-h/backend-go/pkg/oAuth"
 	"github.com/Haidarr-h/backend-go/pkg/otp"
 	"github.com/Haidarr-h/backend-go/pkg/utils"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 type AuthService struct {
-	userRepo    user.Repository
-	refreshRepo RefreshRepo
-	otpRepo     OtpRepo
-	cfg         *config.Config
+	userRepo          user.Repository
+	refreshRepo       RefreshRepo
+	registrationCache *cache.RegistrationCache
+	cfg               *config.Config
 }
 
-func NewAuthService(userRepo user.Repository, cfg *config.Config, refreshRepo RefreshRepo, otpRepo OtpRepo) *AuthService {
-	return &AuthService{userRepo: userRepo, cfg: cfg, refreshRepo: refreshRepo, otpRepo: otpRepo}
+func NewAuthService(userRepo user.Repository, cfg *config.Config, refreshRepo RefreshRepo, registrationCache *cache.RegistrationCache) *AuthService {
+	return &AuthService{userRepo: userRepo, cfg: cfg, refreshRepo: refreshRepo, registrationCache: registrationCache}
 }
 
 // SIGN UP
 func (s *AuthService) SignUp(req SignUpRequest) (SignUpResponse, error) {
 
-	// 1. Check if user email already exist
+	// 1. Check if user email already exist in DB
 	isEmailExist, emailErr := s.userRepo.ExistByEmail(req.Email)
 	if emailErr != nil {
 		return SignUpResponse{}, emailErr
@@ -43,7 +43,7 @@ func (s *AuthService) SignUp(req SignUpRequest) (SignUpResponse, error) {
 		return SignUpResponse{}, ErrEmailIsExists
 	}
 
-	// 2. Check if username already exist
+	// 2. Check if username already exist in DB
 	isUsernameExist, usernameErr := s.userRepo.ExistByUsername(req.Username)
 	if usernameErr != nil {
 		return SignUpResponse{}, usernameErr
@@ -53,75 +53,44 @@ func (s *AuthService) SignUp(req SignUpRequest) (SignUpResponse, error) {
 		return SignUpResponse{}, ErrUsernameIsExists
 	}
 
-	// 3. Hash the passowrd
+	// 3. Hash the password
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 10)
 	if err != nil {
 		return SignUpResponse{}, err
 	}
 
-	// 4. Create the user model
-	hashedPassword := string(hash)
-	newUser := models.User{
-		Email:     req.Email,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		Username:  req.Username,
-		Password:  &hashedPassword,
-	}
-
-	// 5. generate OTP
+	// 4. Generate OTP
 	plainOTP, hashedOTP, otpErr := otp.GenerateOtp()
-
 	if otpErr != nil {
 		return SignUpResponse{}, otpErr
 	}
 
-	// 6. Create user and otp table
-	var result models.User
-
-	txErr := s.cfg.DB.Transaction(func(tx *gorm.DB) error {
-		var err error
-
-		result, err = user.NewUserRepository(tx).CreateUser(newUser)
-
-		if err != nil {
-			return err
-		}
-
-		otpData := models.OtpVerification{
-			UserID:    result.ID,
-			OTPHash:   hashedOTP,
-			ExpiresAt: time.Now().Add(time.Minute * 60),
-			Attempts:  0,
-			Used:      false,
-		}
-
-		if _, err = NewOTPRepository(tx).Create(otpData); err != nil {
-			return err
-		}
-
-		return nil
+	// 5. Store pending registration in cache (overwrites any previous attempt for this email)
+	s.registrationCache.Set(req.Email, cache.PendingRegistration{
+		Email:          req.Email,
+		FirstName:      req.FirstName,
+		LastName:       req.LastName,
+		Username:       req.Username,
+		HashedPassword: string(hash),
+		OTPHash:        hashedOTP,
+		ExpiresAt:      time.Now().Add(time.Minute * 60),
+		Attempts:       0,
 	})
 
-	if txErr != nil {
-		return SignUpResponse{}, txErr
-	}
-
-	// 8. send OTP to the email
-	if err := otp.SendOTP(newUser.Email, plainOTP, s.cfg); err != nil {
+	// 6. Send OTP to the email
+	if err := otp.SendOTP(req.Email, plainOTP, s.cfg); err != nil {
+		s.registrationCache.Delete(req.Email)
 		return SignUpResponse{}, err
 	}
 
-	// 9. success response
-	response := SignUpResponse{
-		ID:         result.ID,
-		FirstName:  result.FirstName,
-		LastName:   result.LastName,
-		Username:   result.Username,
-		IsVerified: result.IsVerified,
-	}
-
-	return response, nil
+	// 7. Return response — no DB row yet, so ID is 0
+	return SignUpResponse{
+		ID:         0,
+		FirstName:  req.FirstName,
+		LastName:   req.LastName,
+		Username:   req.Username,
+		IsVerified: false,
+	}, nil
 }
 
 // SIGN IN
@@ -170,7 +139,7 @@ func (s *AuthService) SignIn(req SignInReq) (SignInRes, error) {
 		return SignInRes{}, errTokenCreate
 	}
 
-	// 8. send token and success
+	// 6. send token and success
 	return SignInRes{RefreshToken: tokenResult.RefreshToken, AccessToken: tokenResult.AccessToken}, nil
 }
 
@@ -210,90 +179,80 @@ func (s *AuthService) DeleteToken(req RefreshTokenReq) error {
 	return nil
 }
 
-// verify otp
+// VERIFY OTP
 func (s *AuthService) VerifyOTP(req VerifyOTPreq) (bool, error) {
 
-	// 1. find data based on email
-	otpData, otpDataErr := s.otpRepo.FindByEmail(req.Email)
-
-	if otpDataErr != nil {
-		return false, otpDataErr
+	// 1. Find pending registration in cache
+	pending, found := s.registrationCache.Get(req.Email)
+	if !found {
+		return false, ErrPendingRegistrationNotFound
 	}
 
-	// 2. check the attempts, used, and expiry
-	if otpData.Attempts >= 5 {
+	// 2. Check attempts and expiry
+	if pending.Attempts >= 5 {
 		return false, ErrInvalidOTPAttempts
 	}
 
-	if otpData.ExpiresAt.Before(time.Now()) {
+	if pending.ExpiresAt.Before(time.Now()) {
+		s.registrationCache.Delete(req.Email)
 		return false, ErrOTPExpired
 	}
 
-	if otpData.Used {
-		return false, ErrInvalidOTPUsed
-	}
-
-	// 3. read and compare the otp
+	// 3. Compare the OTP hash
 	hashOTPreq := fmt.Sprintf("%x", sha256.Sum256([]byte(req.OtpCode)))
 
-	if hashOTPreq != otpData.OTPHash {
+	if hashOTPreq != pending.OTPHash {
 		logger.Log.Error("failed to compare otp code")
-
-		otpData.Attempts += 1
-		if _, updateErr := s.otpRepo.Update(otpData); updateErr != nil {
-			return false, updateErr
-		}
-
+		pending.Attempts++
+		s.registrationCache.Update(req.Email, pending)
 		return false, ErrInvalidOTP
 	}
 
-	// 4. update the verify otp table,
-	otpData.Attempts += 1
-	otpData.Used = true
-	if _, updateErr := s.otpRepo.Update(otpData); updateErr != nil {
-		return false, updateErr
+	// 4. OTP valid — insert user to DB with IsVerified = true
+	newUser := models.User{
+		Email:      pending.Email,
+		FirstName:  pending.FirstName,
+		LastName:   pending.LastName,
+		Username:   pending.Username,
+		Password:   &pending.HashedPassword,
+		IsVerified: true,
 	}
 
-	// 5. update the user is verified
-	if verifyErr := s.userRepo.Verify(otpData.UserID); verifyErr != nil {
-		return false, verifyErr
+	if _, err := s.userRepo.CreateUser(newUser); err != nil {
+		return false, err
 	}
 
-	// 5. response
+	// 5. Remove from cache
+	s.registrationCache.Delete(req.Email)
+
 	return true, nil
 }
 
+// RESEND OTP
 func (s *AuthService) ResendOTP(req ResendOTPreq) error {
-	// 1. find otp data by email
-	otpData, otpDataErr := s.otpRepo.FindByEmail(req.Email)
-	if otpDataErr != nil {
-		return otpDataErr
+	// 1. Find pending registration in cache
+	pending, found := s.registrationCache.Get(req.Email)
+	if !found {
+		return ErrPendingRegistrationNotFound
 	}
 
-	// 2. generate new code, generate new otp, set expiry, used, and attempt
+	// 2. Generate new OTP
 	plainOTP, hashedOTP, otpErr := otp.GenerateOtp()
 	if otpErr != nil {
 		return otpErr
 	}
 
-	// 3. create new otp verification data in table
-	otpData.OTPHash = hashedOTP
-	otpData.ExpiresAt = time.Now().Add(time.Minute * 60)
-	otpData.Attempts = 0
-	otpData.Used = false
-	otpData.UpdatedAt = time.Now()
+	// 3. Update cache entry with new OTP, reset attempts and expiry
+	pending.OTPHash = hashedOTP
+	pending.ExpiresAt = time.Now().Add(time.Minute * 60)
+	pending.Attempts = 0
+	s.registrationCache.Update(req.Email, pending)
 
-	_, createOTPErr := s.otpRepo.Create(otpData)
-	if createOTPErr != nil {
-		return createOTPErr
-	}
-
-	// 4. send the new otp to user gmail
+	// 4. Send new OTP to email
 	if err := otp.SendOTP(req.Email, plainOTP, s.cfg); err != nil {
 		return err
 	}
 
-	// 3. return nil if success
 	return nil
 }
 
