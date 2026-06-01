@@ -134,7 +134,7 @@ func DeleteUser(c *gin.Context, cfg *config.Config) {
 			return err
 		}
 
-		return tx.Delete(&user).Error
+		return tx.Unscoped().Delete(&user).Error
 	})
 
 	if txErr != nil {
