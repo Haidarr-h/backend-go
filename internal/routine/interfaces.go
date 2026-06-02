@@ -1,0 +1,16 @@
+package routine
+
+type Service interface {
+	CreateRoutine(userID uint, req CreateRoutineRequest) (RoutineResponse, error)
+	GetRoutines(userID uint) ([]RoutineResponse, error)
+	UpdateRoutine(id uint, req UpdateRoutineReq) (RoutineResponse, error)
+	DeleteRoutine(routineId uint, userId uint) error
+}
+
+type Repo interface {
+	Create(routine Routine) (Routine, error)
+	FindAll(userID uint) ([]Routine, error)
+	Update(routine Routine) (Routine, error)
+	FindByID(id uint) (Routine, error)
+	Delete(id uint, userId uint) error
+}

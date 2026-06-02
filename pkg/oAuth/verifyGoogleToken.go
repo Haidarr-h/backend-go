@@ -6,11 +6,19 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/Haidarr-h/backend-go/dto"
 	"github.com/Haidarr-h/backend-go/internal/config"
 )
 
-func VerifyGoogleToken(idToken string, cfg *config.Config) (*dto.GoogleUserInfo, error) {
+type GoogleUserInfo struct {
+	Sub        string `json:"sub"`
+	Email      string `json:"email"`
+	Name       string `json:"name"`
+	Picture    string `json:"picture"`
+	GivenName  string `json:"given_name"`
+	FamilyName string `json:"family_name"`
+}
+
+func VerifyGoogleToken(idToken string, cfg *config.Config) (*GoogleUserInfo, error) {
 	url := "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken
 
 	resp, err := http.Get(url)
@@ -32,7 +40,7 @@ func VerifyGoogleToken(idToken string, cfg *config.Config) (*dto.GoogleUserInfo,
 	}
 
 	// put the user data to the userInfo
-	var userInfo dto.GoogleUserInfo
+	var userInfo GoogleUserInfo
 	if err := json.Unmarshal(body, &userInfo); err != nil {
 		return nil, err
 	}

@@ -8,4 +8,5 @@ type Service interface {
 type Repo interface {
 	FindAll(params ExerciseFilterParams) ([]Exercise, error)
 	FindByID(id uint) (Exercise, error)
+	ExistsByIDs(ids []uint) ([]uint, error)
 }

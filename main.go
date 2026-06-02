@@ -9,6 +9,7 @@ import (
 	"github.com/Haidarr-h/backend-go/internal/config"
 	"github.com/Haidarr-h/backend-go/internal/exercise"
 	"github.com/Haidarr-h/backend-go/internal/migrate"
+	"github.com/Haidarr-h/backend-go/internal/routine"
 	"github.com/Haidarr-h/backend-go/internal/user"
 	"github.com/Haidarr-h/backend-go/pkg/logger"
 	"github.com/Haidarr-h/backend-go/routes"
@@ -71,7 +72,12 @@ func main() {
 	exerciseService := exercise.NewExerciseService(exerciseRepo, cfg)
 	exerciseHandler := exercise.NewExerciseHandler(exerciseService)
 
-	routes.RegisterRoutes(r, cfg, authHandler, exerciseHandler)
+	// ROUTINE ROUTE
+	routineRepo := routine.NewRoutineRepository(cfg.DB)
+	routineService := routine.NewRoutineService(routineRepo, exerciseRepo)
+	routineHandler := routine.NewRoutineHandler(routineService)
+
+	routes.RegisterRoutes(r, cfg, authHandler, exerciseHandler, routineHandler)
 
 	migrate.Run(cfg.DB)
 	r.Run(":" + cfg.Port)

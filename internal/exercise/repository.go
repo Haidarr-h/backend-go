@@ -76,3 +76,36 @@ func (r *ExerciseRepository) FindByID(id uint) (Exercise, error) {
 
 	return exercise, nil
 }
+
+// BULK CHECK IF EXISTS
+// returns the IDs from the input that do not exist in the database
+func (r *ExerciseRepository) ExistsByIDs(ids []uint) ([]uint, error) {
+
+	// 1. declare var for store the found ids
+	var foundIDs []uint
+
+	// 2. query setup
+	query := "SELECT id FROM exercises WHERE id IN (?) and is_featured = true"
+
+	// 3. exec query
+	result := r.db.Raw(query, ids).Scan(&foundIDs)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	// 4. create a hash map with leng of the found ids
+	foundMapIDs := make(map[uint]bool, len(foundIDs))
+	for _, id := range foundIDs {
+		foundMapIDs[id] = true
+	}
+
+	var missingIDs []uint
+	for _, id := range ids {
+		if !foundMapIDs[id] {
+			missingIDs = append(missingIDs, id)
+		}
+	}
+
+	return missingIDs, nil
+}
