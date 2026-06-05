@@ -11,6 +11,7 @@ import (
 	"github.com/Haidarr-h/backend-go/internal/migrate"
 	"github.com/Haidarr-h/backend-go/internal/routine"
 	"github.com/Haidarr-h/backend-go/internal/user"
+	"github.com/Haidarr-h/backend-go/pkg/cache"
 	"github.com/Haidarr-h/backend-go/pkg/logger"
 	"github.com/Haidarr-h/backend-go/routes"
 	"github.com/gin-contrib/cors"
@@ -63,8 +64,9 @@ func main() {
 	// AUTH ROUTE
 	userRepo := user.NewUserRepository(cfg.DB)
 	refreshRepo := auth.NewRefreshTokenRepository(cfg.DB)
-	otpRepo := auth.NewOTPRepository(cfg.DB)
-	authService := auth.NewAuthService(userRepo, cfg, refreshRepo, otpRepo)
+	registrationCache := cache.NewRegistrationCache()
+	registrationCache.StartCleanup(make(chan struct{}))
+	authService := auth.NewAuthService(userRepo, cfg, refreshRepo, registrationCache)
 	authHandler := auth.NewAuthHandler(authService)
 
 	// EXERCISE ROUTE
@@ -77,7 +79,12 @@ func main() {
 	routineService := routine.NewRoutineService(routineRepo, exerciseRepo)
 	routineHandler := routine.NewRoutineHandler(routineService)
 
-	routes.RegisterRoutes(r, cfg, authHandler, exerciseHandler, routineHandler)
+	// USER ROUTE
+	userService := user.NewUserService(userRepo)
+	userHandler := user.NewUserHandler(userService)
+
+	// ORCHESTRATE
+	routes.RegisterRoutes(r, cfg, authHandler, exerciseHandler, routineHandler, userHandler)
 
 	migrate.Run(cfg.DB)
 	r.Run(":" + cfg.Port)

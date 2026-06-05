@@ -1,6 +1,7 @@
 package user
 
 import (
+	"github.com/Haidarr-h/backend-go/internal/routine"
 	"github.com/Haidarr-h/backend-go/pkg/logger"
 	"gorm.io/gorm"
 )
@@ -56,6 +57,38 @@ func (r *UserRepository) UpdateUser(user User) (User, error) {
 	return user, nil
 }
 
+// DELETE USER
+func (r *UserRepository) DeleteUser(user User) error {
+	
+	txErr := r.db.Transaction(func(tx *gorm.DB) error {
+		// routine_exercises must go first (FK → routines)
+		routineIDs := tx.Model(&routine.Routine{}).Select("id").Where(user.ID)
+		if err := tx.Unscoped().Where("routine_id IN (?)", routineIDs).Delete(&routine.RoutineExercises{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Unscoped().Where("user_id = ?", user.ID).Delete(&routine.Routine{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Unscoped().Where("user_id = ?", user.ID).Table("refresh_tokens").Delete(nil).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Unscoped().Where("user_id = ?", user.ID).Table("otp_verifications").Delete(nil).Error; err != nil {
+			return err
+		}
+
+		return tx.Unscoped().Delete(&user).Error
+	})
+
+	if txErr != nil {
+		return txErr
+	}
+
+	return nil
+}
+
 // FIND USER BY EMAIL
 func (r *UserRepository) FindByEmail(email string) (User, error) {
 
@@ -63,6 +96,28 @@ func (r *UserRepository) FindByEmail(email string) (User, error) {
 
 	// 1. Search to database
 	result := r.db.Raw("SELECT * FROM users WHERE email = ? LIMIT 1", email).Scan(&user)
+	// result := r.db.Where("email = ?", email).First(&user)
+
+	// 2. Check error
+	if result.Error != nil {
+		return User{}, result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return User{}, ErrUserNotFound
+	}
+
+	// 3. return if found
+	return user, nil
+}
+
+// FIND USER BY USER ID
+func (r *UserRepository) FindByID(userID uint) (User, error) {
+
+	var user User
+
+	// 1. Search to database
+	result := r.db.Raw("SELECT * FROM users WHERE id = ? LIMIT 1", userID).Scan(&user)
 	// result := r.db.Where("email = ?", email).First(&user)
 
 	// 2. Check error

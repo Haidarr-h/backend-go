@@ -5,15 +5,17 @@ import (
 	"github.com/Haidarr-h/backend-go/internal/config"
 	"github.com/Haidarr-h/backend-go/internal/exercise"
 	"github.com/Haidarr-h/backend-go/internal/routine"
+	"github.com/Haidarr-h/backend-go/internal/user"
 	"github.com/Haidarr-h/backend-go/middleware"
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(r *gin.Engine, cfg *config.Config, authHandler *auth.AuthHandler, exerciseHandler *exercise.ExerciseHandler, routineHandler *routine.RoutineHandler) {
+func RegisterRoutes(r *gin.Engine, cfg *config.Config, authHandler *auth.AuthHandler, exerciseHandler *exercise.ExerciseHandler, routineHandler *routine.RoutineHandler, userHandler *user.UserHandler) {
 	api := r.Group("/api/v1")
 
 	// PUBLIC ROUTES
 	authHandler.RegisterRoutes(api, cfg)
+	userHandler.RegisterUserRoutes(api, cfg)
 
 	// JWT PROTECTED ROUTES
 	protected := api.Group("/")
@@ -21,6 +23,5 @@ func RegisterRoutes(r *gin.Engine, cfg *config.Config, authHandler *auth.AuthHan
 	{
 		exerciseHandler.RegisterRoutes(protected, cfg)
 		routineHandler.RegisterRoutes(protected, cfg	)
-		// RegisterUserRoutes(protected, cfg)
 	}
 }

@@ -1,17 +1,84 @@
-package controllers
+package user
 
-// import (
-// 	"github.com/Haidarr-h/backend-go/config"
-// 	"github.com/Haidarr-h/backend-go/models"
-// 	"github.com/Haidarr-h/backend-go/pkg/response"
-// 	"github.com/gin-gonic/gin"
-// )
+import (
+	"errors"
+	"strconv"
 
-// type updateReq struct {
-// 	Id       int    `json:"id" binding:"required,min=1"`
-// 	FullName string `json:"fullName"`
-// 	Username string `json:"username"`
-// }
+	"github.com/Haidarr-h/backend-go/internal/config"
+	"github.com/Haidarr-h/backend-go/pkg/response"
+	"github.com/gin-gonic/gin"
+)
+
+type UserHandler struct {
+	service Service
+}
+
+func NewUserHandler(service Service) *UserHandler {
+	return &UserHandler{service: service}
+}
+
+func (h *UserHandler) RegisterUserRoutes(rg *gin.RouterGroup, cfg *config.Config) {
+	user := rg.Group("/users")
+	{
+		user.POST("/me", h.GetMyData)
+		user.DELETE("/:id", h.DeleteUser)
+	}
+}
+
+// GetMyData godoc
+// @Summary      Get users data (his data)
+// @Tags         users/me
+// @Produce      json
+// @Success      200  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /api/v1/users/me [get]
+func (h *UserHandler) GetMyData(c *gin.Context) {
+	
+	userID := c.GetUint("userID")
+
+	userData, err := h.service.GetMyData(userID)
+
+	if err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			response.BadRequest(c, "user not found", ErrUserNotFound)
+			return
+		}
+		response.InternalError(c, "internal error", err.Error())
+		return
+	}
+
+	response.OK(c, "get user data successful", userData)
+}
+
+// DeleteUser godoc
+// @Summary      delete a user
+// @Tags         users
+// @Produce      json
+// @Param        id   path      string  true  "User ID"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /api/v1/users/{id} [delete]
+func (h *UserHandler) DeleteUser(c *gin.Context) {
+	// 1. get id from param
+	userID, idErr := strconv.ParseUint(c.Param("id"), 10, 64)
+	if idErr != nil {
+		response.BadRequest(c, "invalid routine id", idErr.Error())
+		return
+	}
+
+	if err := h.service.Delete(uint(userID)); err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			response.BadRequest(c, "user not found", ErrUserNotFound)
+			return
+		}
+
+		response.InternalError(c, "internal error", err.Error())
+		return
+	}
+
+	response.OK(c, "Delete user successful", "succes")
+}
+
 
 // // GetUsers godoc
 // // @Summary      Get all users
@@ -21,7 +88,7 @@ package controllers
 // // @Failure      500  {object}  map[string]interface{}
 // // @Router       /api/v1/users [get]
 // func GetUsers(c *gin.Context, cfg *config.Config) {
-// 	var users []models.User
+// 	var users []User
 
 // 	// get all records
 // 	result := cfg.DB.Find(&users)
@@ -45,7 +112,7 @@ package controllers
 // 	// 1. Get param data (user id)
 // 	userId := c.Param("id")
 
-// 	var user models.User
+// 	var user User
 
 // 	if err := cfg.DB.First(&user, userId).Error; err != nil {
 // 		response.InternalError(c, "Failed to fetch user data", err.Error())
@@ -85,7 +152,7 @@ package controllers
 // 	}
 
 // 	// 3. update to database
-// 	if err := cfg.DB.Model(models.User{}).Where("id = ?", req.Id).Updates(updates).Error; err != nil {
+// 	if err := cfg.DB.Model(User{}).Where("id = ?", req.Id).Updates(updates).Error; err != nil {
 // 		response.InternalError(c, "Failed to update user data to database", err.Error())
 // 		return
 // 	}
@@ -93,31 +160,3 @@ package controllers
 // 	response.OK(c, "User update successfully", "")
 // }
 
-// // UpdateUser godoc
-// // @Summary      delete a user
-// // @Tags         users
-// // @Produce      json
-// // @Param        id   path      string  true  "User ID"
-// // @Success      200  {object}  map[string]interface{}
-// // @Failure      500  {object}  map[string]interface{}
-// // @Router       /api/v1/users/{id} [delete]
-// func DeleteUser(c *gin.Context, cfg *config.Config) {
-// 	// 1. get id from param
-// 	id := c.Param("id")
-
-// 	user := models.User{}
-
-// 	// 2. check if user exist
-// 	if err := cfg.DB.First(&user, id).Error; err != nil {
-// 		response.BadRequest(c, "User not found", err.Error())
-// 		return
-// 	}
-
-// 	// 3. Delete
-// 	if err := cfg.DB.Delete(&user, id).Error; err != nil {
-// 		response.InternalError(c, "Failed to delete user", err.Error())
-// 		return
-// 	}
-
-// 	response.OK(c, "Delete user successful", user)
-// }
