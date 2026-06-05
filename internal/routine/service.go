@@ -176,7 +176,7 @@ func (s *RoutineService) DeleteRoutine(routineId uint, userId uint) error {
 	if err != nil {
 
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("routine not found")
+			return ErrRoutineNotFound
 		}
 
 		return err
