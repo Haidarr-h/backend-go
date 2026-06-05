@@ -71,7 +71,9 @@ func (r *RoutineRepository) Create(routine Routine) (Routine, error) {
 		return Routine{}, ErrCreateRoutine
 	}
 
-	return routineModel, nil
+
+
+	return r.FindByID(routineModel.ID)
 }
 
 // READ

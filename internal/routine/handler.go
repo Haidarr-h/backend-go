@@ -22,10 +22,10 @@ func (rc *RoutineHandler) RegisterRoutes(rg *gin.RouterGroup, cfg *config.Config
 	{
 		routine.POST("/", rc.CreateRoutine)
 		routine.GET("/", rc.GetRoutines)
-		routine.PATCH("/", rc.UpdateRoutine)
-		routine.DELETE("/", rc.DeleteRoutine)
+		routine.GET("/:id", rc.GetRoutine)
+		routine.PATCH("/:id", rc.UpdateRoutine)
+		routine.DELETE("/:id", rc.DeleteRoutine)
 	}
-
 }
 
 // CreateRoutine godoc
@@ -93,6 +93,46 @@ func (rc *RoutineHandler) GetRoutines(c *gin.Context) {
 	response.OK(c, "Fetch Successfully", result)
 }
 
+// GetRoutine godoc
+// @Summary      Get routine
+// @Description  Get routine owned by the user or public routine
+// @Tags         routines
+// @Accept       json
+// @Produce      json
+// @Success      200   {object}  map[string]interface{}
+// @Failure      400   {object}  map[string]interface{}
+// @Router       /api/v1/routines/{id} [get]
+func (rc *RoutineHandler) GetRoutine(c *gin.Context) {
+	// 1. get user id from token
+	userID := c.GetUint("userID")
+
+	if userID == 0 {
+		response.Unauthorized(c, "Unauthorized by controller. Invalid token")
+		return
+	}
+
+	// 2. get routine id
+	routineID, idErr := strconv.ParseUint(c.Param("id"), 10, 64)
+	if idErr != nil {
+		response.BadRequest(c, "invalid routine id", idErr.Error())
+		return
+	}
+
+	// 2. service
+	routineData, err := rc.routineService.GetRoutine(userID, uint(routineID))
+
+	if err != nil {
+		if errors.Is(err, InvalidRoutineOwnership) {
+			response.BadRequest(c, "user cannot access this routine", err)
+			return
+		}
+		response.InternalError(c, "internal error", err)
+		return
+	}
+
+	response.OK(c, "get routine data successful", routineData)
+}
+
 // UpdateRoutine godoc
 // @Summary      Update routine
 // @Tags         routines
@@ -125,7 +165,7 @@ func (rc *RoutineHandler) UpdateRoutine(c *gin.Context) {
 	}
 
 	// 4. call the service routine
-	result, err := rc.routineService.UpdateRoutine(uint(routineId), req)
+	result, err := rc.routineService.UpdateRoutine(uint(routineId), userID, req)
 	if err != nil {
 		response.InternalError(c, "Failed to update the user routine", err.Error())
 		return

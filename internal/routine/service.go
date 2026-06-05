@@ -83,15 +83,51 @@ func (s *RoutineService) GetRoutines(userID uint) ([]RoutineResponse, error) {
 	return response, nil
 }
 
+// GET ONE ROUTINE
+func (s *RoutineService) GetRoutine(userID uint, routineID uint) (RoutineResponse, error) {
+
+	// 1. fetch the
+	routineData, err := s.routineRepo.FindByID(routineID)
+
+	if err != nil {
+		
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return RoutineResponse{}, ErrRoutineNotFound
+		}
+		
+		return RoutineResponse{}, err
+	}
+
+	// if routine public = everyone can access
+	// if not public = only the owner can access
+
+	// 2. check if public
+	if routineData.IsPublic == true {
+		return mapToRoutineResponse(routineData), nil
+	}
+
+	// 3. if not public, check if its users
+	if *routineData.UserId == userID {
+		return mapToRoutineResponse(routineData), nil
+	}
+
+	return RoutineResponse{}, InvalidRoutineOwnership
+}
+
 // UPDATE
-func (s *RoutineService) UpdateRoutine(id uint, req UpdateRoutineReq) (RoutineResponse, error) {
+func (s *RoutineService) UpdateRoutine(id, userID uint, req UpdateRoutineReq) (RoutineResponse, error) {
 	// 1. Fetch existing, so we have a complete model
 	existing, err := s.routineRepo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return RoutineResponse{}, errors.New("routine not found")
+			return RoutineResponse{}, ErrRoutineNotFound
 		}
 		return RoutineResponse{}, err
+	}
+
+	// make sure the one who updates it is the owner
+	if *existing.UserId != userID {
+		return RoutineResponse{}, InvalidRoutineOwnership
 	}
 
 	// 2. Apply the only changes

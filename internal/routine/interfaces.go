@@ -3,7 +3,8 @@ package routine
 type Service interface {
 	CreateRoutine(userID uint, req CreateRoutineRequest) (RoutineResponse, error)
 	GetRoutines(userID uint) ([]RoutineResponse, error)
-	UpdateRoutine(id uint, req UpdateRoutineReq) (RoutineResponse, error)
+	GetRoutine(userID uint, routineID uint) (RoutineResponse, error)
+	UpdateRoutine(id, userID uint, req UpdateRoutineReq) (RoutineResponse, error)
 	DeleteRoutine(routineId uint, userId uint) error
 }
 
