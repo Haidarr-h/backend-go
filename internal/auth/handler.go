@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/Haidarr-h/backend-go/internal/config"
-	"github.com/Haidarr-h/backend-go/middleware"
+	"github.com/Haidarr-h/backend-go/internal/middleware"
 	"github.com/Haidarr-h/backend-go/pkg/logger"
 	"github.com/Haidarr-h/backend-go/pkg/response"
 	"github.com/Haidarr-h/backend-go/pkg/validation"

@@ -4,9 +4,9 @@ import (
 	"github.com/Haidarr-h/backend-go/internal/auth"
 	"github.com/Haidarr-h/backend-go/internal/config"
 	"github.com/Haidarr-h/backend-go/internal/exercise"
+	"github.com/Haidarr-h/backend-go/internal/middleware"
 	"github.com/Haidarr-h/backend-go/internal/routine"
 	"github.com/Haidarr-h/backend-go/internal/user"
-	"github.com/Haidarr-h/backend-go/middleware"
 	"github.com/gin-gonic/gin"
 )
 
