@@ -2,9 +2,7 @@ package user
 
 import (
 	"errors"
-	"strconv"
 
-	"github.com/Haidarr-h/backend-go/internal/config"
 	"github.com/Haidarr-h/backend-go/pkg/response"
 	"github.com/gin-gonic/gin"
 )
@@ -17,11 +15,11 @@ func NewUserHandler(service Service) *UserHandler {
 	return &UserHandler{service: service}
 }
 
-func (h *UserHandler) RegisterUserRoutes(rg *gin.RouterGroup, cfg *config.Config) {
+func (h *UserHandler) RegisterUserRoutes(rg *gin.RouterGroup) {
 	user := rg.Group("/users")
 	{
-		user.POST("/me", h.GetMyData)
-		user.DELETE("/:id", h.DeleteUser)
+		user.GET("/me", h.GetMyData)
+		user.DELETE("/", h.DeleteUser)
 	}
 }
 
@@ -54,17 +52,19 @@ func (h *UserHandler) GetMyData(c *gin.Context) {
 // @Summary      delete a user
 // @Tags         users
 // @Produce      json
-// @Param        id   path      string  true  "User ID"
 // @Success      200  {object}  map[string]interface{}
 // @Failure      500  {object}  map[string]interface{}
 // @Router       /api/v1/users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	// 1. get id from param
-	userID, idErr := strconv.ParseUint(c.Param("id"), 10, 64)
-	if idErr != nil {
-		response.BadRequest(c, "invalid routine id", idErr.Error())
-		return
-	}
+	// userID, idErr := strconv.ParseUint(c.Param("id"), 10, 64)
+	// if idErr != nil {
+	// 	response.BadRequest(c, "invalid routine id", idErr.Error())
+	// 	return
+	// }
+
+	// get from token instead
+	userID := c.GetUint("userID")
 
 	if err := h.service.Delete(uint(userID)); err != nil {
 		if errors.Is(err, ErrUserNotFound) {

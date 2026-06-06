@@ -62,7 +62,8 @@ func (r *UserRepository) DeleteUser(user User) error {
 	
 	txErr := r.db.Transaction(func(tx *gorm.DB) error {
 		// routine_exercises must go first (FK → routines)
-		routineIDs := tx.Model(&routine.Routine{}).Select("id").Where(user.ID)
+		routineIDs := tx.Model(&routine.Routine{}).Select("id").Where("user_id = ?", user.ID)
+		
 		if err := tx.Unscoped().Where("routine_id IN (?)", routineIDs).Delete(&routine.RoutineExercises{}).Error; err != nil {
 			return err
 		}
@@ -71,11 +72,11 @@ func (r *UserRepository) DeleteUser(user User) error {
 			return err
 		}
 
-		if err := tx.Unscoped().Where("user_id = ?", user.ID).Table("refresh_tokens").Delete(nil).Error; err != nil {
+		if err := tx.Exec("DELETE FROM refresh_tokens WHERE user_id = ?", user.ID).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Unscoped().Where("user_id = ?", user.ID).Table("otp_verifications").Delete(nil).Error; err != nil {
+		if err := tx.Exec("DELETE FROM otp_verifications WHERE user_id = ?", user.ID).Error; err != nil {
 			return err
 		}
 

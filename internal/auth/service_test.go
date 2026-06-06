@@ -35,6 +35,10 @@ func (m *mockUserRepo) UpdateUser(u user.User) (user.User, error) {
 	args := m.Called(u)
 	return args.Get(0).(user.User), args.Error(1)
 }
+func (m *mockUserRepo) DeleteUser(u user.User) error {
+	args := m.Called(u)
+	return args.Error(0)
+}
 func (m *mockUserRepo) FindByEmail(email string) (user.User, error) {
 	args := m.Called(email)
 	return args.Get(0).(user.User), args.Error(1)
@@ -46,6 +50,14 @@ func (m *mockUserRepo) FindByUsername(username string) (user.User, error) {
 func (m *mockUserRepo) FindByGoogleID(googleID string) (user.User, error) {
 	args := m.Called(googleID)
 	return args.Get(0).(user.User), args.Error(1)
+}
+func (m *mockUserRepo) FindByID(userID uint) (user.User, error) {
+	args := m.Called(userID)
+	return args.Get(0).(user.User), args.Error(1)
+}
+func (m *mockUserRepo) ExistByGoogleID(googleID string) (bool, error) {
+	args := m.Called(googleID)
+	return args.Bool(0), args.Error(1)
 }
 func (m *mockUserRepo) ExistByEmail(email string) (bool, error) {
 	args := m.Called(email)
@@ -203,7 +215,7 @@ func TestSignIn(t *testing.T) {
 		ur := &mockUserRepo{}
 		rr := &mockRefreshRepo{}
 		ur.On("FindByEmail", "test@example.com").Return(user.User{Model: gorm.Model{ID: 1}, Password: &pass}, nil)
-		rr.On("Create", mock.AnythingOfType("*models.RefreshToken")).Return(&RefreshToken{Model: gorm.Model{ID: 1}}, nil)
+		rr.On("Create", mock.AnythingOfType("*auth.RefreshToken")).Return(&RefreshToken{Model: gorm.Model{ID: 1}}, nil)
 
 		svc := newTestService(ur, rr, nil)
 		res, err := svc.SignIn(SignInReq{Identifier: "test@example.com", Password: "password123"})
@@ -220,7 +232,7 @@ func TestSignIn(t *testing.T) {
 		ur := &mockUserRepo{}
 		rr := &mockRefreshRepo{}
 		ur.On("FindByUsername", "testuser").Return(user.User{Model: gorm.Model{ID: 2}, Password: &pass}, nil)
-		rr.On("Create", mock.AnythingOfType("*models.RefreshToken")).Return(&RefreshToken{Model: gorm.Model{ID: 1}}, nil)
+		rr.On("Create", mock.AnythingOfType("*auth.RefreshToken")).Return(&RefreshToken{Model: gorm.Model{ID: 1}}, nil)
 
 		svc := newTestService(ur, rr, nil)
 		res, err := svc.SignIn(SignInReq{Identifier: "testuser", Password: "password123"})
@@ -238,7 +250,7 @@ func TestSignIn(t *testing.T) {
 		rr := &mockRefreshRepo{}
 		dbErr := errors.New("db error")
 		ur.On("FindByEmail", "test@example.com").Return(user.User{Model: gorm.Model{ID: 1}, Password: &pass}, nil)
-		rr.On("Create", mock.AnythingOfType("*models.RefreshToken")).Return(&RefreshToken{}, dbErr)
+		rr.On("Create", mock.AnythingOfType("*auth.RefreshToken")).Return(&RefreshToken{}, dbErr)
 
 		svc := newTestService(ur, rr, nil)
 		_, err := svc.SignIn(SignInReq{Identifier: "test@example.com", Password: "password123"})
@@ -282,7 +294,7 @@ func TestRefresh(t *testing.T) {
 		rr := &mockRefreshRepo{}
 		valid := &RefreshToken{Model: gorm.Model{ID: 1}, UserID: 1, ExpiresAt: time.Now().Add(time.Hour * 24)}
 		rr.On("FindByToken", "valid-token").Return(valid, nil)
-		rr.On("Create", mock.AnythingOfType("*models.RefreshToken")).Return(&RefreshToken{Model: gorm.Model{ID: 2}}, nil)
+		rr.On("Create", mock.AnythingOfType("*auth.RefreshToken")).Return(&RefreshToken{Model: gorm.Model{ID: 2}}, nil)
 
 		svc := newTestService(&mockUserRepo{}, rr, nil)
 		res, err := svc.Refresh(RefreshTokenReq{RefreshToken: "valid-token"})

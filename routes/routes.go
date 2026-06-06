@@ -15,13 +15,13 @@ func RegisterRoutes(r *gin.Engine, cfg *config.Config, authHandler *auth.AuthHan
 
 	// PUBLIC ROUTES
 	authHandler.RegisterRoutes(api, cfg)
-	userHandler.RegisterUserRoutes(api, cfg)
 
 	// JWT PROTECTED ROUTES
 	protected := api.Group("/")
 	protected.Use(middleware.RequireAuth(cfg))
 	{
+		userHandler.RegisterUserRoutes(api)
 		exerciseHandler.RegisterRoutes(protected, cfg)
-		routineHandler.RegisterRoutes(protected, cfg	)
+		routineHandler.RegisterRoutes(protected, cfg)
 	}
 }
