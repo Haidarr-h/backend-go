@@ -167,6 +167,17 @@ func (rc *RoutineHandler) UpdateRoutine(c *gin.Context) {
 	// 4. call the service routine
 	result, err := rc.routineService.UpdateRoutine(uint(routineId), userID, req)
 	if err != nil {
+
+		if errors.Is(err, InvalidRoutineOwnership) {
+			response.BadRequest(c, "this routine cant be accessed by this account", InvalidRoutineOwnership)
+			return
+		}
+
+		if errors.Is(err, ErrRoutineNotFound) {
+			response.BadRequest(c, "routine not found", ErrRoutineNotFound)
+			return
+		}
+
 		response.InternalError(c, "Failed to update the user routine", err.Error())
 		return
 	}
