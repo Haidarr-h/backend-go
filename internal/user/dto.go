@@ -1,12 +1,12 @@
 package user
 
 type UserResponse struct {
-	Email      string  `json:"email"`
-	FirstName  string  `json:"firstName"`
-	LastName   string  `json:"lastName"`
-	Username   string  `json:"username"`
-	Picture    *string `json:"picture"`
-	IsVerified bool    `json:"isVerified"`
+	Email      string  `json:"email" example:"jane.doe@example.com"`
+	FirstName  string  `json:"firstName" example:"Jane"`
+	LastName   string  `json:"lastName" example:"Doe"`
+	Username   string  `json:"username" example:"janedoe"`
+	Picture    *string `json:"picture" example:"https://example.com/avatar.jpg"`
+	IsVerified bool    `json:"isVerified" example:"true"`
 }
 
 type updateReq struct {

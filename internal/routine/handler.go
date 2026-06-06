@@ -30,11 +30,16 @@ func (rc *RoutineHandler) RegisterRoutes(rg *gin.RouterGroup, cfg *config.Config
 
 // CreateRoutine godoc
 // @Summary      Create Routine
+// @Description  Create a new routine owned by the authenticated user
 // @Tags         routines
 // @Accept       json
 // @Produce      json
-// @Success      200   {object}  map[string]interface{}
+// @Security     BearerAuth
+// @Param        body  body      CreateRoutineRequest  true  "Routine to create"
+// @Success      201   {object}  map[string]interface{}
 // @Failure      400   {object}  map[string]interface{}
+// @Failure      401   {object}  map[string]interface{}
+// @Failure      500   {object}  map[string]interface{}
 // @Router       /api/v1/routines [post]
 func (rc *RoutineHandler) CreateRoutine(c *gin.Context) {
 
@@ -66,12 +71,14 @@ func (rc *RoutineHandler) CreateRoutine(c *gin.Context) {
 
 // GetRoutines godoc
 // @Summary      Get routines
-// @Description  Get routines owned by the user
+// @Description  Get all routines owned by the authenticated user
 // @Tags         routines
 // @Accept       json
 // @Produce      json
+// @Security     BearerAuth
 // @Success      200   {object}  map[string]interface{}
-// @Failure      400   {object}  map[string]interface{}
+// @Failure      401   {object}  map[string]interface{}
+// @Failure      500   {object}  map[string]interface{}
 // @Router       /api/v1/routines [get]
 func (rc *RoutineHandler) GetRoutines(c *gin.Context) {
 	// 1. get user id from token
@@ -95,12 +102,16 @@ func (rc *RoutineHandler) GetRoutines(c *gin.Context) {
 
 // GetRoutine godoc
 // @Summary      Get routine
-// @Description  Get routine owned by the user or public routine
+// @Description  Get a single routine owned by the user, or any public routine
 // @Tags         routines
 // @Accept       json
 // @Produce      json
+// @Security     BearerAuth
+// @Param        id    path      int  true  "Routine ID"
 // @Success      200   {object}  map[string]interface{}
 // @Failure      400   {object}  map[string]interface{}
+// @Failure      401   {object}  map[string]interface{}
+// @Failure      500   {object}  map[string]interface{}
 // @Router       /api/v1/routines/{id} [get]
 func (rc *RoutineHandler) GetRoutine(c *gin.Context) {
 	// 1. get user id from token
@@ -135,11 +146,17 @@ func (rc *RoutineHandler) GetRoutine(c *gin.Context) {
 
 // UpdateRoutine godoc
 // @Summary      Update routine
+// @Description  Partially update a routine owned by the authenticated user
 // @Tags         routines
 // @Accept       json
 // @Produce      json
+// @Security     BearerAuth
+// @Param        id    path      int               true  "Routine ID"
+// @Param        body  body      UpdateRoutineReq  true  "Fields to update"
 // @Success      200   {object}  map[string]interface{}
 // @Failure      400   {object}  map[string]interface{}
+// @Failure      401   {object}  map[string]interface{}
+// @Failure      500   {object}  map[string]interface{}
 // @Router       /api/v1/routines/{id} [patch]
 func (rc *RoutineHandler) UpdateRoutine(c *gin.Context) {
 	// 1. get user id from token
@@ -186,12 +203,17 @@ func (rc *RoutineHandler) UpdateRoutine(c *gin.Context) {
 }
 
 // DeleteRoutine godoc
-// @Summary      delete routine
+// @Summary      Delete routine
+// @Description  Delete a routine owned by the authenticated user
 // @Tags         routines
 // @Accept       json
 // @Produce      json
+// @Security     BearerAuth
+// @Param        id    path      int  true  "Routine ID"
 // @Success      200   {object}  map[string]interface{}
 // @Failure      400   {object}  map[string]interface{}
+// @Failure      401   {object}  map[string]interface{}
+// @Failure      500   {object}  map[string]interface{}
 // @Router       /api/v1/routines/{id} [delete]
 func (rc *RoutineHandler) DeleteRoutine(c *gin.Context) {
 	// 1. get user id from token

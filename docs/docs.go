@@ -378,123 +378,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "exercises"
-                ],
-                "summary": "Create a new exercise",
-                "parameters": [
-                    {
-                        "description": "Exercise data",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/controllers.ExerciseRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "exercises"
-                ],
-                "summary": "Delete exercises",
-                "parameters": [
-                    {
-                        "description": "Exercise data",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/controllers.ExerciseDelReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "exercises"
-                ],
-                "summary": "Update a exercise",
-                "parameters": [
-                    {
-                        "description": "Exercise data",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/controllers.ExerciseUpdateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
             }
         },
         "/api/v1/exercises/{id}": {
@@ -535,7 +418,12 @@ const docTemplate = `{
         },
         "/api/v1/routines": {
             "get": {
-                "description": "Get routines owned by the user",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all routines owned by the authenticated user",
                 "consumes": [
                     "application/json"
                 ],
@@ -554,8 +442,15 @@ const docTemplate = `{
                             "additionalProperties": true
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -564,6 +459,12 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new routine owned by the authenticated user",
                 "consumes": [
                     "application/json"
                 ],
@@ -574,9 +475,20 @@ const docTemplate = `{
                     "routines"
                 ],
                 "summary": "Create Routine",
+                "parameters": [
+                    {
+                        "description": "Routine to create",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routine.CreateRoutineRequest"
+                        }
+                    }
+                ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -584,6 +496,20 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -593,7 +519,13 @@ const docTemplate = `{
             }
         },
         "/api/v1/routines/{id}": {
-            "delete": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a single routine owned by the user, or any public routine",
                 "consumes": [
                     "application/json"
                 ],
@@ -603,7 +535,16 @@ const docTemplate = `{
                 "tags": [
                     "routines"
                 ],
-                "summary": "delete routine",
+                "summary": "Get routine",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Routine ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -618,10 +559,87 @@ const docTemplate = `{
                             "type": "object",
                             "additionalProperties": true
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a routine owned by the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "routines"
+                ],
+                "summary": "Delete routine",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Routine ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
                     }
                 }
             },
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Partially update a routine owned by the authenticated user",
                 "consumes": [
                     "application/json"
                 ],
@@ -632,6 +650,24 @@ const docTemplate = `{
                     "routines"
                 ],
                 "summary": "Update routine",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Routine ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fields to update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routine.UpdateRoutineReq"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -646,19 +682,33 @@ const docTemplate = `{
                             "type": "object",
                             "additionalProperties": true
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
                     }
                 }
             }
         },
-        "/api/v1/users": {
+        "/api/v1/users/me": {
             "get": {
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "users/me"
                 ],
-                "summary": "Get all users",
+                "summary": "Get users data (his data)",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -678,31 +728,6 @@ const docTemplate = `{
             }
         },
         "/api/v1/users/{id}": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Get a user",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
             "delete": {
                 "produces": [
                     "application/json"
@@ -711,51 +736,6 @@ const docTemplate = `{
                     "users"
                 ],
                 "summary": "delete a user",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Update a user",
-                "parameters": [
-                    {
-                        "description": "user data",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/controllers.updateReq"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1047,76 +1027,86 @@ const docTemplate = `{
                 }
             }
         },
-        "controllers.ExerciseDelReq": {
+        "routine.CreateRoutineRequest": {
             "type": "object",
             "required": [
-                "id"
+                "name",
+                "routineExercises"
             ],
             "properties": {
-                "id": {
+                "description": {
+                    "type": "string",
+                    "example": "Chest, shoulders and triceps"
+                },
+                "isPublic": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Push Day"
+                },
+                "routineExercises": {
                     "type": "array",
-                    "minItems": 1,
                     "items": {
-                        "type": "integer"
+                        "$ref": "#/definitions/routine.RoutineExercisesRequest"
                     }
                 }
             }
         },
-        "controllers.ExerciseRequest": {
-            "type": "object",
-            "properties": {
-                "category": {
-                    "type": "string"
-                },
-                "equipment": {
-                    "type": "string"
-                },
-                "muscleGroup": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "controllers.ExerciseUpdateRequest": {
+        "routine.RoutineExercisesRequest": {
             "type": "object",
             "required": [
-                "id"
+                "exerciseId",
+                "order"
             ],
             "properties": {
-                "category": {
-                    "type": "string"
-                },
-                "equipment": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "muscleGroup": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "controllers.updateReq": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "fullName": {
-                    "type": "string"
-                },
-                "id": {
+                "exerciseId": {
                     "type": "integer",
-                    "minimum": 1
+                    "example": 12
                 },
-                "username": {
-                    "type": "string"
+                "order": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "reps": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "restSecond": {
+                    "type": "integer",
+                    "example": 90
+                },
+                "sets": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "weightKg": {
+                    "type": "number",
+                    "example": 60.5
+                }
+            }
+        },
+        "routine.UpdateRoutineReq": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Updated chest and triceps focus"
+                },
+                "isPublic": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Push Day (Heavy)"
+                },
+                "routineExercises": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/routine.RoutineExercisesRequest"
+                    }
                 }
             }
         }

@@ -155,53 +155,64 @@ definitions:
     - email
     - otpCode
     type: object
-  controllers.ExerciseDelReq:
+  routine.CreateRoutineRequest:
     properties:
-      id:
+      description:
+        example: Chest, shoulders and triceps
+        type: string
+      isPublic:
+        example: false
+        type: boolean
+      name:
+        example: Push Day
+        type: string
+      routineExercises:
         items:
-          type: integer
-        minItems: 1
+          $ref: '#/definitions/routine.RoutineExercisesRequest'
         type: array
     required:
-    - id
+    - name
+    - routineExercises
     type: object
-  controllers.ExerciseRequest:
+  routine.RoutineExercisesRequest:
     properties:
-      category:
-        type: string
-      equipment:
-        type: string
-      muscleGroup:
-        type: string
-      name:
-        type: string
-    type: object
-  controllers.ExerciseUpdateRequest:
-    properties:
-      category:
-        type: string
-      equipment:
-        type: string
-      id:
+      exerciseId:
+        example: 12
         type: integer
-      muscleGroup:
-        type: string
-      name:
-        type: string
-    required:
-    - id
-    type: object
-  controllers.updateReq:
-    properties:
-      fullName:
-        type: string
-      id:
-        minimum: 1
+      order:
+        example: 1
         type: integer
-      username:
-        type: string
+      reps:
+        example: 10
+        type: integer
+      restSecond:
+        example: 90
+        type: integer
+      sets:
+        example: 3
+        type: integer
+      weightKg:
+        example: 60.5
+        type: number
     required:
-    - id
+    - exerciseId
+    - order
+    type: object
+  routine.UpdateRoutineReq:
+    properties:
+      description:
+        example: Updated chest and triceps focus
+        type: string
+      isPublic:
+        example: true
+        type: boolean
+      name:
+        example: Push Day (Heavy)
+        type: string
+      routineExercises:
+        items:
+          $ref: '#/definitions/routine.RoutineExercisesRequest'
+        type: array
     type: object
 host: api-staging.liftlogs.my.id
 info:
@@ -428,32 +439,6 @@ paths:
       tags:
       - auth
   /api/v1/exercises:
-    delete:
-      consumes:
-      - application/json
-      parameters:
-      - description: Exercise data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.ExerciseDelReq'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Delete exercises
-      tags:
-      - exercises
     get:
       produces:
       - application/json
@@ -469,58 +454,6 @@ paths:
             additionalProperties: true
             type: object
       summary: Get all exercises
-      tags:
-      - exercises
-    patch:
-      consumes:
-      - application/json
-      parameters:
-      - description: Exercise data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.ExerciseUpdateRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Update a exercise
-      tags:
-      - exercises
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Exercise data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.ExerciseRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Create a new exercise
       tags:
       - exercises
   /api/v1/exercises/{id}:
@@ -551,7 +484,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get routines owned by the user
+      description: Get all routines owned by the authenticated user
       produces:
       - application/json
       responses:
@@ -560,79 +493,8 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get routines
-      tags:
-      - routines
-    post:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Create Routine
-      tags:
-      - routines
-  /api/v1/routines/{id}:
-    delete:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-      summary: delete routine
-      tags:
-      - routines
-    patch:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Update routine
-      tags:
-      - routines
-  /api/v1/users:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
+        "401":
+          description: Unauthorized
           schema:
             additionalProperties: true
             type: object
@@ -641,17 +503,173 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Get all users
+      security:
+      - BearerAuth: []
+      summary: Get routines
       tags:
-      - users
-  /api/v1/users/{id}:
-    delete:
+      - routines
+    post:
+      consumes:
+      - application/json
+      description: Create a new routine owned by the authenticated user
       parameters:
-      - description: User ID
+      - description: Routine to create
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routine.CreateRoutineRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create Routine
+      tags:
+      - routines
+  /api/v1/routines/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a routine owned by the authenticated user
+      parameters:
+      - description: Routine ID
         in: path
         name: id
         required: true
-        type: string
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete routine
+      tags:
+      - routines
+    get:
+      consumes:
+      - application/json
+      description: Get a single routine owned by the user, or any public routine
+      parameters:
+      - description: Routine ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get routine
+      tags:
+      - routines
+    patch:
+      consumes:
+      - application/json
+      description: Partially update a routine owned by the authenticated user
+      parameters:
+      - description: Routine ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Fields to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routine.UpdateRoutineReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update routine
+      tags:
+      - routines
+  /api/v1/users/{id}:
+    delete:
       produces:
       - application/json
       responses:
@@ -668,6 +686,7 @@ paths:
       summary: delete a user
       tags:
       - users
+  /api/v1/users/me:
     get:
       produces:
       - application/json
@@ -682,33 +701,9 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Get a user
+      summary: Get users data (his data)
       tags:
-      - users
-    patch:
-      parameters:
-      - description: user data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.updateReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Update a user
-      tags:
-      - users
+      - users/me
   /auth/google/mobile:
     post:
       consumes:
