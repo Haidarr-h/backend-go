@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 
-	"github.com/Haidarr-h/backend-go/controllers"
 	_ "github.com/Haidarr-h/backend-go/docs"
 	"github.com/Haidarr-h/backend-go/internal/auth"
 	"github.com/Haidarr-h/backend-go/internal/config"
 	"github.com/Haidarr-h/backend-go/internal/exercise"
+	"github.com/Haidarr-h/backend-go/internal/health"
 	"github.com/Haidarr-h/backend-go/internal/migrate"
 	"github.com/Haidarr-h/backend-go/internal/routine"
 	"github.com/Haidarr-h/backend-go/internal/user"
@@ -59,7 +59,7 @@ func main() {
 
 	// ROUTE
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	r.GET("/healthCheck", controllers.HealthCheck)
+	r.GET("/healthCheck", health.HealthCheck)
 
 	// AUTH ROUTE
 	userRepo := user.NewUserRepository(cfg.DB)
