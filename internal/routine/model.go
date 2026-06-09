@@ -7,21 +7,27 @@ import (
 
 type Routine struct {
 	gorm.Model
-	UserId           *uint `gorm:"default:null"`
+	UserID           *uint `gorm:"default:null"`
 	Name             string
 	Description      string
 	IsPublic         bool
-	RoutineExercises []RoutineExercises
+	RoutineExercises []RoutineExercise
 }
 
-type RoutineExercises struct {
+type RoutineExercise struct {
 	gorm.Model
-	RoutineID  uint
-	ExerciseID uint
-	Exercise   exercise.Exercise
-	Order      int
-	Sets       int
-	Reps       int
-	WeightKG   float64
-	RestSecond int
+	RoutineID           uint
+	ExerciseID          uint
+	Exercise            exercise.Exercise
+	Order               int
+	RestSecond          int
+	RoutineExerciseSets []RoutineExerciseSet
+}
+
+type RoutineExerciseSet struct {
+	gorm.Model
+	RoutineExerciseID uint
+	SetNumber         int
+	Reps              int
+	WeightKG          float64
 }

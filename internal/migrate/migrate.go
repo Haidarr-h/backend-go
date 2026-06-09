@@ -19,7 +19,7 @@ func Run(db *gorm.DB) {
 			&user.User{},
 			&exercise.Exercise{},
 			&routine.Routine{},
-			&routine.RoutineExercises{},
+			&routine.RoutineExercise{},
 			&auth.RefreshToken{},
 			&auth.OtpVerification{},
 		)

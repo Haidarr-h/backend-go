@@ -23,37 +23,43 @@ type RoutineResponse struct {
 }
 
 type UpdateRoutineReq struct {
-	Name             *string                    `json:"name" example:"Push Day (Heavy)"`
-	Description      *string                    `json:"description" example:"Updated chest and triceps focus"`
-	IsPublic         *bool                      `json:"isPublic" example:"true"`
+	Name             *string                   `json:"name" example:"Push Day (Heavy)"`
+	Description      *string                   `json:"description" example:"Updated chest and triceps focus"`
+	IsPublic         *bool                     `json:"isPublic" example:"true"`
 	RoutineExercises []RoutineExercisesRequest `json:"routineExercises"`
 }
 
 type RoutineExercisesRequest struct {
-	ExerciseID uint    `json:"exerciseId" binding:"required" example:"12"`
-	Order      int     `json:"order" binding:"required" example:"1"`
-	Sets       int     `json:"sets" example:"3"`
-	Reps       int     `json:"reps" example:"10"`
-	WeightKG   float64 `json:"weightKg" example:"60.5"`
-	RestSecond int     `json:"restSecond" example:"90"`
+	ExerciseID uint                        `json:"exerciseId" binding:"required" example:"12"`
+	Order      int                         `json:"order" binding:"required" example:"1"`
+	RestSecond int                         `json:"restSecond" example:"90"`
+	Sets       []RoutineExerciseSetRequest `json:"routineExerciseSet"`
 }
 
 type UpdateRoutineExercisesReq struct {
-	ExerciseID *uint    `json:"exerciseId" example:"12"`
-	Order      int     `json:"order" example:"1"`
-	Sets       int     `json:"sets" example:"4"`
-	Reps       int     `json:"reps" example:"8"`
-	WeightKG   float64 `json:"weightKg" example:"65"`
-	RestSecond int     `json:"restSecond" example:"120"`
+	ExerciseID *uint `json:"exerciseId" example:"12" binding:"required"`
+	Order      int   `json:"order" example:"1" binding:"required"`
+	RestSecond int   `json:"restSecond" example:"120" binding:"required"`
 }
 
 type RoutineExerciseResponse struct {
-	ID         uint             `json:"id"`
-	ExerciseID uint             `json:"exerciseId" binding:"required"`
-	Order      int              `json:"order" binding:"required"`
-	Sets       int              `json:"sets"`
-	Reps       int              `json:"reps"`
-	WeightKG   float64          `json:"weightKg"`
-	RestSecond int              `json:"restSecond"`
-	Exercise   exercise.ExerciseResponse `json:"exercise"`
+	ID         uint                         `json:"id"`
+	ExerciseID uint                         `json:"exerciseId"`
+	Order      int                          `json:"order"`
+	RestSecond int                          `json:"restSecond"`
+	Exercise   exercise.ExerciseResponse    `json:"exercise"`
+	Sets       []RoutineExerciseSetResponse `json:"routineExerciseSet"`
+}
+
+type RoutineExerciseSetRequest struct {
+	SetNumber int     `json:"setNumber" binding:"required"`
+	Reps      int     `json:"reps" binding:"required"`
+	WeightKG  float64 `json:"weightKg" binding:"required"`
+}
+
+type RoutineExerciseSetResponse struct {
+	ID        uint    `json:"id"`
+	SetNumber int     `json:"setNumber"`
+	Reps      int     `json:"reps"`
+	WeightKG  float64 `json:"weightKg"`
 }

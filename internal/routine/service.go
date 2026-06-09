@@ -27,20 +27,26 @@ func (s *RoutineService) CreateRoutine(userID uint, req CreateRoutineRequest) (R
 		Name:        req.Name,
 		Description: req.Description,
 		IsPublic:    req.IsPublic,
-		UserId:      &userID,
+		UserID:      &userID,
 	}
 
 	// 2. Map nested exercise DTO to model
 	for _, e := range req.RoutineExercises {
-		routine.RoutineExercises = append(routine.RoutineExercises, RoutineExercises{
+		re := RoutineExercise{
 			ExerciseID: e.ExerciseID,
 			Order:      e.Order,
-			Sets:       e.Sets,
-			Reps:       e.Reps,
-			WeightKG:   e.WeightKG,
 			RestSecond: e.RestSecond,
-		})
+		}
 
+		for _, set := range e.Sets {
+			re.RoutineExerciseSets = append(re.RoutineExerciseSets, RoutineExerciseSet{
+				SetNumber: set.SetNumber,
+				Reps:      set.Reps,
+				WeightKG:  set.WeightKG,
+			})
+		}
+
+		routine.RoutineExercises = append(routine.RoutineExercises, re)
 		exerciseIDs = append(exerciseIDs, e.ExerciseID)
 	}
 
@@ -90,11 +96,11 @@ func (s *RoutineService) GetRoutine(userID uint, routineID uint) (RoutineRespons
 	routineData, err := s.routineRepo.FindByID(routineID)
 
 	if err != nil {
-		
+
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return RoutineResponse{}, ErrRoutineNotFound
 		}
-		
+
 		return RoutineResponse{}, err
 	}
 
@@ -107,7 +113,7 @@ func (s *RoutineService) GetRoutine(userID uint, routineID uint) (RoutineRespons
 	}
 
 	// 3. if not public, check if its users
-	if *routineData.UserId == userID {
+	if *routineData.UserID == userID {
 		return mapToRoutineResponse(routineData), nil
 	}
 
@@ -126,7 +132,7 @@ func (s *RoutineService) UpdateRoutine(id, userID uint, req UpdateRoutineReq) (R
 	}
 
 	// make sure the one who updates it is the owner
-	if *existing.UserId != userID {
+	if *existing.UserID != userID {
 		return RoutineResponse{}, InvalidRoutineOwnership
 	}
 
@@ -141,19 +147,26 @@ func (s *RoutineService) UpdateRoutine(id, userID uint, req UpdateRoutineReq) (R
 		existing.IsPublic = *req.IsPublic
 	}
 	if req.RoutineExercises != nil {
-		var exercises []RoutineExercises
+		var exercises []RoutineExercise
 
 		// map exercises dto to model
 		for _, e := range req.RoutineExercises {
-			exercises = append(exercises, RoutineExercises{
+			re := RoutineExercise{
 				ExerciseID: e.ExerciseID,
 				RoutineID:  id,
 				Order:      e.Order,
-				Sets:       e.Sets,
-				Reps:       e.Reps,
-				WeightKG:   e.WeightKG,
 				RestSecond: e.RestSecond,
-			})
+			}
+
+			for _, set := range e.Sets {
+				re.RoutineExerciseSets = append(re.RoutineExerciseSets, RoutineExerciseSet{
+					SetNumber: set.SetNumber,
+					Reps:      set.Reps,
+					WeightKG:  set.WeightKG,
+				})
+			}
+
+			exercises = append(exercises, re)
 		}
 
 		existing.RoutineExercises = exercises
@@ -190,14 +203,23 @@ func mapToRoutineResponse(r Routine) RoutineResponse {
 	var exercises []RoutineExerciseResponse
 
 	for _, e := range r.RoutineExercises {
+		var exerciseSet []RoutineExerciseSetResponse
+
+		for _, s := range e.RoutineExerciseSets {
+			exerciseSet = append(exerciseSet, RoutineExerciseSetResponse{
+				ID:        s.ID,
+				SetNumber: s.SetNumber,
+				Reps:      s.Reps,
+				WeightKG:  s.WeightKG,
+			})
+		}
+
 		exercises = append(exercises, RoutineExerciseResponse{
 			ID:         e.ID,
 			ExerciseID: e.ExerciseID,
 			Order:      e.Order,
-			Sets:       e.Sets,
-			Reps:       e.Reps,
-			WeightKG:   e.WeightKG,
 			RestSecond: e.RestSecond,
+			Sets:       exerciseSet,
 			Exercise: exercise.ExerciseResponse{
 				ID:               e.Exercise.ID,
 				Name:             e.Exercise.Name,

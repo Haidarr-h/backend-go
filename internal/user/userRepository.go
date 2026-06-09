@@ -64,7 +64,7 @@ func (r *UserRepository) DeleteUser(user User) error {
 		// routine_exercises must go first (FK → routines)
 		routineIDs := tx.Model(&routine.Routine{}).Select("id").Where("user_id = ?", user.ID)
 		
-		if err := tx.Unscoped().Where("routine_id IN (?)", routineIDs).Delete(&routine.RoutineExercises{}).Error; err != nil {
+		if err := tx.Unscoped().Where("routine_id IN (?)", routineIDs).Delete(&routine.RoutineExercise{}).Error; err != nil {
 			return err
 		}
 
