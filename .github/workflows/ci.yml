@@ -3,10 +3,58 @@ name: Go CI/CD
 on:
   push:
     branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+# Cancel superseded PR runs, but let main (deploy) runs queue so a deploy is
+# never cancelled mid-flight.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  build-and-deploy:
+  # ---------------------------------------------------------------------------
+  # Runs on every PR and every push to main. Gates the deploy below.
+  # ---------------------------------------------------------------------------
+  test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache: true
+
+      - name: Check formatting
+        run: |
+          unformatted=$(gofmt -l . | grep -v '^docs/' || true)
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt-clean:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build ./...
+
+      - name: Test
+        run: go test ./... -race
+
+  # ---------------------------------------------------------------------------
+  # Only after tests pass, and only for pushes to main.
+  # ---------------------------------------------------------------------------
+  build-and-deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     permissions:
       contents: read
@@ -20,12 +68,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.25"
-
-      - name: Install GCC (required for SQLite)
-        run: sudo apt-get install -y gcc
-
-      - name: Run Tests
-        run: go test ./... -v
+          cache: true
 
       - name: Install swag
         run: go install github.com/swaggo/swag/cmd/swag@latest
@@ -37,10 +80,14 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Build Docker image
-        run: docker build --no-cache -t ghcr.io/haidarr-h/backend-go:latest .
+        run: |
+          docker build -f dockerfile \
+            -t ghcr.io/haidarr-h/backend-go:latest \
+            -t ghcr.io/haidarr-h/backend-go:${{ github.sha }} \
+            .
 
       - name: Push Docker image
-        run: docker push ghcr.io/haidarr-h/backend-go:latest
+        run: docker push --all-tags ghcr.io/haidarr-h/backend-go
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -55,6 +102,18 @@ jobs:
             docker compose up -d --force-recreate
             docker image prune -f
 
+  # ---------------------------------------------------------------------------
+  # Syncs the deployed spec into Apidog. Non-blocking: a docs-sync hiccup must
+  # not mark a successful deploy as failed.
+  # ---------------------------------------------------------------------------
+  sync-apidog:
+    needs: build-and-deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+
+    steps:
       - name: Update Apidog Collection
         run: |
           echo "Waiting for server to be ready..."
@@ -67,6 +126,7 @@ jobs:
             echo "Attempt $i: server not ready (status $STATUS), retrying in 10s..."
             sleep 10
           done
+
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
             "https://api.apidog.com/v1/projects/${{ secrets.APIDOG_PROJECT_ID }}/import-openapi?locale=en-US" \
             -H "X-Apidog-Api-Version: 2024-03-28" \
@@ -80,7 +140,8 @@ jobs:
                 "endpointOverwriteBehavior": "OVERWRITE_EXISTING",
                 "schemaOverwriteBehavior": "OVERWRITE_EXISTING",
                 "updateFolderOfChangedEndpoint": false,
-                "prependBasePath": false
+                "prependBasePath": false,
+                "deleteUnmatchedResources": true
               }
             }')
 
