@@ -1054,6 +1054,28 @@ const docTemplate = `{
                 }
             }
         },
+        "routine.RoutineExerciseSetRequest": {
+            "type": "object",
+            "required": [
+                "reps",
+                "setNumber",
+                "weightKg"
+            ],
+            "properties": {
+                "reps": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "setNumber": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "weightKg": {
+                    "type": "number",
+                    "example": 40
+                }
+            }
+        },
         "routine.RoutineExercisesRequest": {
             "type": "object",
             "required": [
@@ -1069,21 +1091,15 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
-                "reps": {
-                    "type": "integer",
-                    "example": 10
-                },
                 "restSecond": {
                     "type": "integer",
                     "example": 90
                 },
-                "sets": {
-                    "type": "integer",
-                    "example": 3
-                },
-                "weightKg": {
-                    "type": "number",
-                    "example": 60.5
+                "routineExerciseSet": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/routine.RoutineExerciseSetRequest"
+                    }
                 }
             }
         },

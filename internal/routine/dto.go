@@ -52,9 +52,9 @@ type RoutineExerciseResponse struct {
 }
 
 type RoutineExerciseSetRequest struct {
-	SetNumber int     `json:"setNumber" binding:"required"`
-	Reps      int     `json:"reps" binding:"required"`
-	WeightKG  float64 `json:"weightKg" binding:"required"`
+	SetNumber int     `json:"setNumber" binding:"required" example:"1"`
+	Reps      int     `json:"reps" binding:"required" example:"10"`
+	WeightKG  float64 `json:"weightKg" binding:"required" example:"40"`
 }
 
 type RoutineExerciseSetResponse struct {
