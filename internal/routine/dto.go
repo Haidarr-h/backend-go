@@ -30,14 +30,14 @@ type UpdateRoutineReq struct {
 }
 
 type RoutineExercisesRequest struct {
-	ExerciseID uint                        `json:"exerciseId" binding:"required" example:"12"`
+	ExerciseID uint                        `json:"exerciseId" binding:"required" example:"75"`
 	Order      int                         `json:"order" binding:"required" example:"1"`
 	RestSecond int                         `json:"restSecond" example:"90"`
 	Sets       []RoutineExerciseSetRequest `json:"routineExerciseSet"`
 }
 
 type UpdateRoutineExercisesReq struct {
-	ExerciseID *uint `json:"exerciseId" example:"12" binding:"required"`
+	ExerciseID *uint `json:"exerciseId" example:"75" binding:"required"`
 	Order      int   `json:"order" example:"1" binding:"required"`
 	RestSecond int   `json:"restSecond" example:"120" binding:"required"`
 }

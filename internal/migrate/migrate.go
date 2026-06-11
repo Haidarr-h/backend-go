@@ -7,6 +7,7 @@ import (
 	"github.com/Haidarr-h/backend-go/internal/auth"
 	"github.com/Haidarr-h/backend-go/internal/exercise"
 	"github.com/Haidarr-h/backend-go/internal/routine"
+	"github.com/Haidarr-h/backend-go/internal/session"
 	"github.com/Haidarr-h/backend-go/internal/user"
 	"gorm.io/gorm"
 )
@@ -21,6 +22,9 @@ func Run(db *gorm.DB) {
 			&routine.Routine{},
 			&routine.RoutineExercise{},
 			&routine.RoutineExerciseSet{},
+			&session.Session{},
+			&session.SessionExercise{},
+			&session.SessionExerciseSet{},
 			&auth.RefreshToken{},
 			&auth.OtpVerification{},
 		)

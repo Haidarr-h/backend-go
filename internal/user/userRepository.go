@@ -2,6 +2,7 @@ package user
 
 import (
 	"github.com/Haidarr-h/backend-go/internal/routine"
+	"github.com/Haidarr-h/backend-go/internal/session"
 	"github.com/Haidarr-h/backend-go/pkg/logger"
 	"gorm.io/gorm"
 )
@@ -75,6 +76,23 @@ func (r *UserRepository) DeleteUser(user User) error {
 		}
 
 		if err := tx.Unscoped().Where("user_id = ?", user.ID).Delete(&routine.Routine{}).Error; err != nil {
+			return err
+		}
+
+		// delete the session tree bottom-up too:
+		// sets (grandchildren) -> exercises (children) -> sessions.
+		sessionIDs := tx.Model(&session.Session{}).Select("id").Where("user_id = ?", user.ID)
+		sessionExerciseIDs := tx.Model(&session.SessionExercise{}).Select("id").Where("session_id IN (?)", sessionIDs)
+
+		if err := tx.Unscoped().Where("session_exercise_id IN (?)", sessionExerciseIDs).Delete(&session.SessionExerciseSet{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Unscoped().Where("session_id IN (?)", sessionIDs).Delete(&session.SessionExercise{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Unscoped().Where("user_id = ?", user.ID).Delete(&session.Session{}).Error; err != nil {
 			return err
 		}
 

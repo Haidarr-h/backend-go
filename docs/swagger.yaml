@@ -193,7 +193,7 @@ definitions:
   routine.RoutineExercisesRequest:
     properties:
       exerciseId:
-        example: 12
+        example: 75
         type: integer
       order:
         example: 1
@@ -224,6 +224,43 @@ definitions:
         items:
           $ref: '#/definitions/routine.RoutineExercisesRequest'
         type: array
+    type: object
+  session.CreateSessionRequest:
+    properties:
+      endTime:
+        example: "2026-06-11T09:00:00Z"
+        type: string
+      name:
+        example: Morning Push
+        type: string
+      notes:
+        example: Felt strong today
+        type: string
+      routineId:
+        example: 1
+        type: integer
+      startTime:
+        example: "2026-06-11T08:00:00Z"
+        type: string
+    required:
+    - endTime
+    - routineId
+    - startTime
+    type: object
+  session.UpdateSessionReq:
+    properties:
+      endTime:
+        example: "2026-06-11T09:15:00Z"
+        type: string
+      name:
+        example: Morning Push (Heavy)
+        type: string
+      notes:
+        example: New PR on bench
+        type: string
+      startTime:
+        example: "2026-06-11T08:00:00Z"
+        type: string
     type: object
 host: api-staging.liftlogs.my.id
 info:
@@ -679,6 +716,214 @@ paths:
       summary: Update routine
       tags:
       - routines
+  /api/v1/sessions:
+    get:
+      description: Get all sessions owned by the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get sessions
+      tags:
+      - sessions
+    post:
+      consumes:
+      - application/json
+      description: Start a session from a routine; its exercises are snapshotted from
+        the routine
+      parameters:
+      - description: Session to create
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/session.CreateSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create session
+      tags:
+      - sessions
+  /api/v1/sessions/{id}:
+    delete:
+      description: Delete a session owned by the authenticated user
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete session
+      tags:
+      - sessions
+    get:
+      description: Get a single session (with computed metrics) owned by the user
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get session
+      tags:
+      - sessions
+    patch:
+      consumes:
+      - application/json
+      description: Update a session's non-exercise fields (name, notes, times)
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Fields to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/session.UpdateSessionReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update session
+      tags:
+      - sessions
   /api/v1/users/me:
     delete:
       produces:
