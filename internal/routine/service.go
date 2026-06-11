@@ -20,9 +20,7 @@ func NewRoutineService(routineRepo Repo, exerciseRepo exercise.Repo) *RoutineSer
 // CREATE
 func (s *RoutineService) CreateRoutine(userID uint, req CreateRoutineRequest) (RoutineResponse, error) {
 
-	var exerciseIDs []uint
-
-	// 1. map DTO to model
+	// 1. map DTO to model (routine id is unknown until insert, so pass 0)
 	routine := Routine{
 		Name:        req.Name,
 		Description: req.Description,
@@ -30,35 +28,12 @@ func (s *RoutineService) CreateRoutine(userID uint, req CreateRoutineRequest) (R
 		UserID:      &userID,
 	}
 
-	// 2. Map nested exercise DTO to model
-	for _, e := range req.RoutineExercises {
-		re := RoutineExercise{
-			ExerciseID: e.ExerciseID,
-			Order:      e.Order,
-			RestSecond: e.RestSecond,
-		}
+	exercises, exerciseIDs := buildRoutineExercises(0, req.RoutineExercises)
+	routine.RoutineExercises = exercises
 
-		for _, set := range e.Sets {
-			re.RoutineExerciseSets = append(re.RoutineExerciseSets, RoutineExerciseSet{
-				SetNumber: set.SetNumber,
-				Reps:      set.Reps,
-				WeightKG:  set.WeightKG,
-			})
-		}
-
-		routine.RoutineExercises = append(routine.RoutineExercises, re)
-		exerciseIDs = append(exerciseIDs, e.ExerciseID)
-	}
-
-	// check if all exercise ids are valid
-	missingIDs, errMissingIDs := s.exerciseRepo.ExistsByIDs(exerciseIDs)
-
-	if errMissingIDs != nil {
-		return RoutineResponse{}, errMissingIDs
-	}
-
-	if len(missingIDs) > 0 {
-		return RoutineResponse{}, fmt.Errorf("%w: %v", ErrExerciseNotFound, missingIDs)
+	// 2. make sure every referenced exercise actually exists
+	if err := s.assertExercisesExist(exerciseIDs); err != nil {
+		return RoutineResponse{}, err
 	}
 
 	// 3. pass model to repository
@@ -80,8 +55,8 @@ func (s *RoutineService) GetRoutines(userID uint) ([]RoutineResponse, error) {
 		return nil, err
 	}
 
-	// map each model to dto response
-	var response []RoutineResponse
+	// map each model to dto response (non-nil so the API returns [] not null)
+	response := make([]RoutineResponse, 0, len(routines))
 	for _, r := range routines {
 		response = append(response, mapToRoutineResponse(r))
 	}
@@ -108,12 +83,12 @@ func (s *RoutineService) GetRoutine(userID uint, routineID uint) (RoutineRespons
 	// if not public = only the owner can access
 
 	// 2. check if public
-	if routineData.IsPublic == true {
+	if routineData.IsPublic {
 		return mapToRoutineResponse(routineData), nil
 	}
 
-	// 3. if not public, check if its users
-	if *routineData.UserID == userID {
+	// 3. if not public, only the owner can access it (nil-safe)
+	if routineData.UserID != nil && *routineData.UserID == userID {
 		return mapToRoutineResponse(routineData), nil
 	}
 
@@ -131,12 +106,12 @@ func (s *RoutineService) UpdateRoutine(id, userID uint, req UpdateRoutineReq) (R
 		return RoutineResponse{}, err
 	}
 
-	// make sure the one who updates it is the owner
-	if *existing.UserID != userID {
+	// make sure the one who updates it is the owner (nil-safe)
+	if existing.UserID == nil || *existing.UserID != userID {
 		return RoutineResponse{}, InvalidRoutineOwnership
 	}
 
-	// 2. Apply the only changes
+	// 2. Apply only the provided scalar fields
 	if req.Name != nil {
 		existing.Name = *req.Name
 	}
@@ -146,34 +121,22 @@ func (s *RoutineService) UpdateRoutine(id, userID uint, req UpdateRoutineReq) (R
 	if req.IsPublic != nil {
 		existing.IsPublic = *req.IsPublic
 	}
-	if req.RoutineExercises != nil {
-		var exercises []RoutineExercise
 
-		// map exercises dto to model
-		for _, e := range req.RoutineExercises {
-			re := RoutineExercise{
-				ExerciseID: e.ExerciseID,
-				RoutineID:  id,
-				Order:      e.Order,
-				RestSecond: e.RestSecond,
-			}
+	// 3. Exercises: omitted (nil) keeps them as-is, an explicit list (even
+	// empty) replaces the whole set. Only validate + rebuild when provided.
+	replaceExercises := req.RoutineExercises != nil
+	if replaceExercises {
+		exercises, exerciseIDs := buildRoutineExercises(id, req.RoutineExercises)
 
-			for _, set := range e.Sets {
-				re.RoutineExerciseSets = append(re.RoutineExerciseSets, RoutineExerciseSet{
-					SetNumber: set.SetNumber,
-					Reps:      set.Reps,
-					WeightKG:  set.WeightKG,
-				})
-			}
-
-			exercises = append(exercises, re)
+		if err := s.assertExercisesExist(exerciseIDs); err != nil {
+			return RoutineResponse{}, err
 		}
 
 		existing.RoutineExercises = exercises
 	}
 
-	// 3. save the full model
-	updated, err := s.routineRepo.Update(existing)
+	// 4. persist
+	updated, err := s.routineRepo.Update(existing, replaceExercises)
 	if err != nil {
 		return RoutineResponse{}, err
 	}
@@ -193,6 +156,55 @@ func (s *RoutineService) DeleteRoutine(routineId uint, userId uint) error {
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+// buildRoutineExercises maps the request DTOs into RoutineExercise models and
+// collects the referenced exercise ids. routineID is set on each child (it is
+// ignored by Create, which only learns the routine id after insert).
+func buildRoutineExercises(routineID uint, reqs []RoutineExercisesRequest) ([]RoutineExercise, []uint) {
+	var exercises []RoutineExercise
+	var exerciseIDs []uint
+
+	for _, e := range reqs {
+		re := RoutineExercise{
+			RoutineID:  routineID,
+			ExerciseID: e.ExerciseID,
+			Order:      e.Order,
+			RestSecond: e.RestSecond,
+		}
+
+		for _, set := range e.Sets {
+			re.RoutineExerciseSets = append(re.RoutineExerciseSets, RoutineExerciseSet{
+				SetNumber: set.SetNumber,
+				Reps:      set.Reps,
+				WeightKG:  set.WeightKG,
+			})
+		}
+
+		exercises = append(exercises, re)
+		exerciseIDs = append(exerciseIDs, e.ExerciseID)
+	}
+
+	return exercises, exerciseIDs
+}
+
+// assertExercisesExist returns ErrExerciseNotFound (wrapping the missing ids)
+// when any of the given exercise ids does not exist. An empty list is a no-op.
+func (s *RoutineService) assertExercisesExist(exerciseIDs []uint) error {
+	if len(exerciseIDs) == 0 {
+		return nil
+	}
+
+	missingIDs, err := s.exerciseRepo.ExistsByIDs(exerciseIDs)
+	if err != nil {
+		return err
+	}
+
+	if len(missingIDs) > 0 {
+		return fmt.Errorf("%w: %v", ErrExerciseNotFound, missingIDs)
 	}
 
 	return nil

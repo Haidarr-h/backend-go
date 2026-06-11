@@ -58,7 +58,7 @@ func (rc *RoutineHandler) CreateRoutine(c *gin.Context) {
 	if err != nil {
 
 		if errors.Is(err, ErrExerciseNotFound) {
-			response.BadRequest(c, "Exercise not found", ErrExerciseNotFound)
+			response.BadRequest(c, "Exercise not found", err.Error())
 			return
 		}
 
@@ -133,11 +133,15 @@ func (rc *RoutineHandler) GetRoutine(c *gin.Context) {
 	routineData, err := rc.routineService.GetRoutine(userID, uint(routineID))
 
 	if err != nil {
-		if errors.Is(err, InvalidRoutineOwnership) {
-			response.BadRequest(c, "user cannot access this routine", err)
+		if errors.Is(err, ErrRoutineNotFound) {
+			response.NotFound(c, "routine not found", err.Error())
 			return
 		}
-		response.InternalError(c, "internal error", err)
+		if errors.Is(err, InvalidRoutineOwnership) {
+			response.Forbidden(c, "user cannot access this routine", err.Error())
+			return
+		}
+		response.InternalError(c, "internal error", err.Error())
 		return
 	}
 
@@ -186,12 +190,17 @@ func (rc *RoutineHandler) UpdateRoutine(c *gin.Context) {
 	if err != nil {
 
 		if errors.Is(err, InvalidRoutineOwnership) {
-			response.BadRequest(c, "this routine cant be accessed by this account", InvalidRoutineOwnership)
+			response.Forbidden(c, "this routine cant be accessed by this account", err.Error())
 			return
 		}
 
 		if errors.Is(err, ErrRoutineNotFound) {
-			response.BadRequest(c, "routine not found", ErrRoutineNotFound)
+			response.NotFound(c, "routine not found", err.Error())
+			return
+		}
+
+		if errors.Is(err, ErrExerciseNotFound) {
+			response.BadRequest(c, "exercise not found", err.Error())
 			return
 		}
 
@@ -234,7 +243,11 @@ func (rc *RoutineHandler) DeleteRoutine(c *gin.Context) {
 	// 3. call the service routine
 	errRepo := rc.routineService.DeleteRoutine(uint(routineId), userId)
 	if errRepo != nil {
-		response.InternalError(c, "Failed to delete routien", errRepo.Error())
+		if errors.Is(errRepo, ErrRoutineNotFound) {
+			response.NotFound(c, "routine not found", errRepo.Error())
+			return
+		}
+		response.InternalError(c, "Failed to delete routine", errRepo.Error())
 		return
 	}
 

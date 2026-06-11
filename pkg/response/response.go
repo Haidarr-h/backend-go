@@ -46,6 +46,14 @@ func Unauthorized(c *gin.Context, message string) {
 	})
 }
 
+func Forbidden(c *gin.Context, message string, errorMes any) {
+	c.JSON(http.StatusForbidden, Response{
+		Success: false,
+		Message: message,
+		Error:   errorMes,
+	})
+}
+
 func Conflict(c *gin.Context, message string, errorMes any) {
 	c.JSON(http.StatusConflict, Response{
 		Success: false,

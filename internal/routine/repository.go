@@ -89,10 +89,29 @@ func (r *RoutineRepository) FindAll(userID uint) ([]Routine, error) {
 }
 
 // UPDATE
-func (r *RoutineRepository) Update(routine Routine) (Routine, error) {
+// When replaceExercises is false only the routine's own columns are touched and
+// the existing exercises/sets are left intact. When true the whole exercise tree
+// is swapped for routine.RoutineExercises.
+func (r *RoutineRepository) Update(routine Routine, replaceExercises bool) (Routine, error) {
 
 	err := r.db.Transaction(func(tx *gorm.DB) error {
-		// 1. collect the existing exercise ids for this routine
+		// 1. update the routine's own columns (map so false values persist)
+		if err := tx.Model(&Routine{}).
+			Where("id = ?", routine.ID).
+			Updates(map[string]interface{}{
+				"name":        routine.Name,
+				"description": routine.Description,
+				"is_public":   routine.IsPublic,
+			}).Error; err != nil {
+			return err
+		}
+
+		// 2. leave the exercise tree alone unless the caller wants it replaced
+		if !replaceExercises {
+			return nil
+		}
+
+		// 2.1 collect the existing exercise ids for this routine
 		var exerciseIDs []uint
 		if err := tx.Model(&RoutineExercise{}).
 			Where("routine_id = ?", routine.ID).
@@ -100,7 +119,7 @@ func (r *RoutineRepository) Update(routine Routine) (Routine, error) {
 			return err
 		}
 
-		// 2. delete the sets belonging to those exercises (otherwise they orphan)
+		// 2.2 delete the sets belonging to those exercises (otherwise they orphan)
 		if len(exerciseIDs) > 0 {
 			if err := tx.Where("routine_exercise_id IN ?", exerciseIDs).
 				Delete(&RoutineExerciseSet{}).Error; err != nil {
@@ -108,14 +127,25 @@ func (r *RoutineRepository) Update(routine Routine) (Routine, error) {
 			}
 		}
 
-		// 3. delete the existing exercises
+		// 2.3 delete the existing exercises
 		if err := tx.Where("routine_id = ?", routine.ID).Delete(&RoutineExercise{}).Error; err != nil {
 			return err
 		}
 
-		// 4. save routine with new exercises + nested sets (GORM cascades the creates)
-		if err := tx.Save(&routine).Error; err != nil {
-			return err
+		// 2.4 create the new exercises + nested sets. Reset primary keys so GORM
+		// inserts fresh rows instead of trying to update the just-deleted ones.
+		for i := range routine.RoutineExercises {
+			routine.RoutineExercises[i].ID = 0
+			routine.RoutineExercises[i].RoutineID = routine.ID
+			for j := range routine.RoutineExercises[i].RoutineExerciseSets {
+				routine.RoutineExercises[i].RoutineExerciseSets[j].ID = 0
+			}
+		}
+
+		if len(routine.RoutineExercises) > 0 {
+			if err := tx.Create(&routine.RoutineExercises).Error; err != nil {
+				return err
+			}
 		}
 
 		return nil

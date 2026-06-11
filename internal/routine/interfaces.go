@@ -11,7 +11,7 @@ type Service interface {
 type Repo interface {
 	Create(routine Routine) (Routine, error)
 	FindAll(userID uint) ([]Routine, error)
-	Update(routine Routine) (Routine, error)
+	Update(routine Routine, replaceExercises bool) (Routine, error)
 	FindByID(id uint) (Routine, error)
 	Delete(id uint, userId uint) error
 }
