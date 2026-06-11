@@ -94,5 +94,5 @@ func main() {
 
 	migrate.Run(cfg.DB)
 	r.Run(":" + cfg.Port)
-	
+
 }

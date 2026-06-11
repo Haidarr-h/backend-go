@@ -77,4 +77,3 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 	response.OK(c, "Delete user successful", "success")
 }
-

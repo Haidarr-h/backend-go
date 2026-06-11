@@ -60,7 +60,7 @@ func (r *UserRepository) UpdateUser(user User) (User, error) {
 
 // DELETE USER
 func (r *UserRepository) DeleteUser(user User) error {
-	
+
 	txErr := r.db.Transaction(func(tx *gorm.DB) error {
 		// delete the routine tree bottom-up so FK constraints hold:
 		// sets (grandchildren) -> exercises (children) -> routines.

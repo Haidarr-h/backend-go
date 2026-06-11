@@ -23,7 +23,6 @@ var ErrEmailNotFound = errors.New("email not found")
 var ErrOTPUpdate = errors.New("failed to update otp record")
 var ErrPendingRegistrationNotFound = errors.New("no pending registration found for this email, please sign up first")
 
-
 // refresh token repo
 var ErrGenerateToken = errors.New("failed to insert refresh token data")
 var ErrExpiredToken = errors.New("refresh token is expired")
@@ -40,5 +39,3 @@ type ErrorRes500 struct {
 	Message string `json:"message" example:"failed to process..."`
 	Error   string `json:"error,omitempty" example:"internal server error"`
 }
-
-

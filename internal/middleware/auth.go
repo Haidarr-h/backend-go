@@ -61,7 +61,7 @@ func RequireAuth(cfg *config.Config) gin.HandlerFunc {
 			})
 			return
 		}
-		
+
 		c.Set("userID", uint(sub))
 		c.Next()
 	}

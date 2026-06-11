@@ -22,7 +22,6 @@ func NewAuthHandler(authService Service) *AuthHandler {
 
 func (rc *AuthHandler) RegisterRoutes(rg *gin.RouterGroup, cfg *config.Config) {
 
-
 	// 2. Define the routes
 	auth := rg.Group("/auth")
 	auth.Use(middleware.RequireAPIKey(cfg))
@@ -161,12 +160,12 @@ func (rc *AuthHandler) Refresh(c *gin.Context) {
 	// 2. perform refresh
 	result, err := rc.authService.Refresh(req)
 	if err != nil {
-		
+
 		if errors.Is(err, ErrExpiredToken) {
 			response.BadRequest(c, "Bad Request", err.Error())
 			return
 		}
-		
+
 		response.InternalError(c, "error", err.Error())
 		return
 	}

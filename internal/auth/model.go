@@ -14,13 +14,13 @@ type OtpVerification struct {
 	ExpiresAt time.Time `gorm:"not null"`
 	Attempts  int       `gorm:"default:0"`
 	Used      bool      `gorm:"default:false"`
-	User      user.User      `gorm:"foreignKey:UserID"`
+	User      user.User `gorm:"foreignKey:UserID"`
 }
 
 type RefreshToken struct {
 	gorm.Model
 	UserID    uint
 	User      user.User `gorm:"foreignKey:UserID"`
-	Token     string `gorm:"uniqueIndex"`
+	Token     string    `gorm:"uniqueIndex"`
 	ExpiresAt time.Time
 }
