@@ -61,9 +61,15 @@ func (r *UserRepository) UpdateUser(user User) (User, error) {
 func (r *UserRepository) DeleteUser(user User) error {
 	
 	txErr := r.db.Transaction(func(tx *gorm.DB) error {
-		// routine_exercises must go first (FK → routines)
+		// delete the routine tree bottom-up so FK constraints hold:
+		// sets (grandchildren) -> exercises (children) -> routines.
 		routineIDs := tx.Model(&routine.Routine{}).Select("id").Where("user_id = ?", user.ID)
-		
+		exerciseIDs := tx.Model(&routine.RoutineExercise{}).Select("id").Where("routine_id IN (?)", routineIDs)
+
+		if err := tx.Unscoped().Where("routine_exercise_id IN (?)", exerciseIDs).Delete(&routine.RoutineExerciseSet{}).Error; err != nil {
+			return err
+		}
+
 		if err := tx.Unscoped().Where("routine_id IN (?)", routineIDs).Delete(&routine.RoutineExercise{}).Error; err != nil {
 			return err
 		}

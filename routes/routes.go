@@ -20,7 +20,7 @@ func RegisterRoutes(r *gin.Engine, cfg *config.Config, authHandler *auth.AuthHan
 	protected := api.Group("/")
 	protected.Use(middleware.RequireAuth(cfg))
 	{
-		userHandler.RegisterUserRoutes(api)
+		userHandler.RegisterUserRoutes(protected)
 		exerciseHandler.RegisterRoutes(protected, cfg)
 		routineHandler.RegisterRoutes(protected, cfg)
 	}

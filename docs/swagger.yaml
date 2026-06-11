@@ -679,7 +679,7 @@ paths:
       summary: Update routine
       tags:
       - routines
-  /api/v1/users/{id}:
+  /api/v1/users/me:
     delete:
       produces:
       - application/json
@@ -689,15 +689,26 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
         "500":
           description: Internal Server Error
           schema:
             additionalProperties: true
             type: object
-      summary: delete a user
+      security:
+      - BearerAuth: []
+      summary: Delete the authenticated user
       tags:
-      - users
-  /api/v1/users/me:
+      - users/me
     get:
       produces:
       - application/json
@@ -707,11 +718,23 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
         "500":
           description: Internal Server Error
           schema:
             additionalProperties: true
             type: object
+      security:
+      - BearerAuth: []
       summary: Get users data (his data)
       tags:
       - users/me
