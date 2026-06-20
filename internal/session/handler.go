@@ -73,7 +73,7 @@ func (h *SessionHandler) CreateSession(c *gin.Context) {
 }
 
 // GetSessions godoc
-// @Summary      Get sessions
+// @Summary      Get my sessions
 // @Description  Get all sessions owned by the authenticated user
 // @Tags         sessions
 // @Produce      json
@@ -99,7 +99,7 @@ func (h *SessionHandler) GetSessions(c *gin.Context) {
 }
 
 // GetSession godoc
-// @Summary      Get session
+// @Summary      Get my session by ID
 // @Description  Get a single session (with computed metrics) owned by the user
 // @Tags         sessions
 // @Produce      json
@@ -142,7 +142,7 @@ func (h *SessionHandler) GetSession(c *gin.Context) {
 }
 
 // UpdateSession godoc
-// @Summary      Update session
+// @Summary      Update my session by ID
 // @Description  Update a session's non-exercise fields (name, notes, times)
 // @Tags         sessions
 // @Accept       json
@@ -195,7 +195,7 @@ func (h *SessionHandler) UpdateSession(c *gin.Context) {
 }
 
 // DeleteSession godoc
-// @Summary      Delete session
+// @Summary      Delete my session by ID
 // @Description  Delete a session owned by the authenticated user
 // @Tags         sessions
 // @Produce      json

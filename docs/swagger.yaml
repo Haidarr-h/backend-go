@@ -768,7 +768,7 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Get sessions
+      summary: Get my sessions
       tags:
       - sessions
     post:
@@ -850,7 +850,7 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Delete session
+      summary: Delete my session by ID
       tags:
       - sessions
     get:
@@ -896,7 +896,7 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Get session
+      summary: Get my session by ID
       tags:
       - sessions
     patch:
@@ -950,7 +950,7 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Update session
+      summary: Update my session by ID
       tags:
       - sessions
   /api/v1/users/me:

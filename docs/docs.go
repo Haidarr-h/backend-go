@@ -757,7 +757,7 @@ const docTemplate = `{
                 "tags": [
                     "sessions"
                 ],
-                "summary": "Get sessions",
+                "summary": "Get my sessions",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -856,7 +856,7 @@ const docTemplate = `{
                 "tags": [
                     "sessions"
                 ],
-                "summary": "Get session",
+                "summary": "Get my session by ID",
                 "parameters": [
                     {
                         "type": "integer",
@@ -924,7 +924,7 @@ const docTemplate = `{
                 "tags": [
                     "sessions"
                 ],
-                "summary": "Delete session",
+                "summary": "Delete my session by ID",
                 "parameters": [
                     {
                         "type": "integer",
@@ -988,7 +988,7 @@ const docTemplate = `{
                 "tags": [
                     "sessions"
                 ],
-                "summary": "Update session",
+                "summary": "Update my session by ID",
                 "parameters": [
                     {
                         "type": "integer",
