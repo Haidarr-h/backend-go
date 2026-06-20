@@ -50,6 +50,10 @@ func (m *mockRoutineRepo) FindAll(userID uint) ([]routine.Routine, error) {
 	args := m.Called(userID)
 	return args.Get(0).([]routine.Routine), args.Error(1)
 }
+func (m *mockRoutineRepo) FindAllPublic() ([]routine.Routine, error) {
+	args := m.Called()
+	return args.Get(0).([]routine.Routine), args.Error(1)
+}
 func (m *mockRoutineRepo) FindByID(id uint) (routine.Routine, error) {
 	args := m.Called(id)
 	return args.Get(0).(routine.Routine), args.Error(1)
