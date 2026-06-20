@@ -64,6 +64,23 @@ func (s *RoutineService) GetRoutines(userID uint) ([]RoutineResponse, error) {
 	return response, nil
 }
 
+// GET TEMPLATES (all public routines)
+func (s *RoutineService) GetTemplates() ([]RoutineResponse, error) {
+	// run the repo function
+	routines, err := s.routineRepo.FindAllPublic()
+	if err != nil {
+		return nil, err
+	}
+
+	// map each model to dto response (non-nil so the API returns [] not null)
+	response := make([]RoutineResponse, 0, len(routines))
+	for _, r := range routines {
+		response = append(response, mapToRoutineResponse(r))
+	}
+
+	return response, nil
+}
+
 // GET ONE ROUTINE
 func (s *RoutineService) GetRoutine(userID uint, routineID uint) (RoutineResponse, error) {
 

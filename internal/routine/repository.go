@@ -88,6 +88,22 @@ func (r *RoutineRepository) FindAll(userID uint) ([]Routine, error) {
 	return routine, nil
 }
 
+// READ public templates
+func (r *RoutineRepository) FindAllPublic() ([]Routine, error) {
+	var routines []Routine
+
+	result := r.db.Where("is_public = ?", true).
+		Preload("RoutineExercises.Exercise").
+		Preload("RoutineExercises.RoutineExerciseSets").
+		Find(&routines)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return routines, nil
+}
+
 // UPDATE
 // When replaceExercises is false only the routine's own columns are touched and
 // the existing exercises/sets are left intact. When true the whole exercise tree

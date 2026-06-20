@@ -22,6 +22,7 @@ func (rc *RoutineHandler) RegisterRoutes(rg *gin.RouterGroup, cfg *config.Config
 	{
 		routine.POST("/", rc.CreateRoutine)
 		routine.GET("/", rc.GetRoutines)
+		routine.GET("/templates", rc.GetTemplates)
 		routine.GET("/:id", rc.GetRoutine)
 		routine.PATCH("/:id", rc.UpdateRoutine)
 		routine.DELETE("/:id", rc.DeleteRoutine)
@@ -70,7 +71,7 @@ func (rc *RoutineHandler) CreateRoutine(c *gin.Context) {
 }
 
 // GetRoutines godoc
-// @Summary      Get routines
+// @Summary      Get my routines
 // @Description  Get all routines owned by the authenticated user
 // @Tags         routines
 // @Accept       json
@@ -100,8 +101,31 @@ func (rc *RoutineHandler) GetRoutines(c *gin.Context) {
 	response.OK(c, "Fetch Successfully", result)
 }
 
+// GetTemplates godoc
+// @Summary      Get template routines
+// @Description  Get all public routines, usable as templates by any authenticated user
+// @Tags         routines
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200   {object}  map[string]interface{}
+// @Failure      401   {object}  map[string]interface{}
+// @Failure      500   {object}  map[string]interface{}
+// @Router       /api/v1/routines/templates [get]
+func (rc *RoutineHandler) GetTemplates(c *gin.Context) {
+	// 1. run the service (no user filter, templates are public to everyone)
+	result, err := rc.routineService.GetTemplates()
+	if err != nil {
+		response.InternalError(c, "Internal Error: Couldn't Get Templates", err.Error())
+		return
+	}
+
+	// 2. return the response
+	response.OK(c, "Fetch Successfully", result)
+}
+
 // GetRoutine godoc
-// @Summary      Get routine
+// @Summary      Get my routine by ID
 // @Description  Get a single routine owned by the user, or any public routine
 // @Tags         routines
 // @Accept       json

@@ -29,6 +29,10 @@ func (m *mockService) GetRoutines(userID uint) ([]RoutineResponse, error) {
 	args := m.Called(userID)
 	return args.Get(0).([]RoutineResponse), args.Error(1)
 }
+func (m *mockService) GetTemplates() ([]RoutineResponse, error) {
+	args := m.Called()
+	return args.Get(0).([]RoutineResponse), args.Error(1)
+}
 func (m *mockService) GetRoutine(userID uint, routineID uint) (RoutineResponse, error) {
 	args := m.Called(userID, routineID)
 	return args.Get(0).(RoutineResponse), args.Error(1)
@@ -171,6 +175,34 @@ func TestGetRoutinesHandler(t *testing.T) {
 
 		r := newTestRouter(svc, 1)
 		w := doJSON(r, http.MethodGet, "/api/v1/routines/", nil)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		svc.AssertExpectations(t)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// GetTemplates handler
+// ---------------------------------------------------------------------------
+
+func TestGetTemplatesHandler(t *testing.T) {
+	t.Run("internal error", func(t *testing.T) {
+		svc := &mockService{}
+		svc.On("GetTemplates").Return([]RoutineResponse{}, errors.New("db error"))
+
+		r := newTestRouter(svc, 1)
+		w := doJSON(r, http.MethodGet, "/api/v1/routines/templates", nil)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		svc.AssertExpectations(t)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		svc := &mockService{}
+		svc.On("GetTemplates").Return([]RoutineResponse{{ID: 1, IsPublic: true}}, nil)
+
+		r := newTestRouter(svc, 1)
+		w := doJSON(r, http.MethodGet, "/api/v1/routines/templates", nil)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		svc.AssertExpectations(t)

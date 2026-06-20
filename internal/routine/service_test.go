@@ -24,6 +24,10 @@ func (m *mockRoutineRepo) FindAll(userID uint) ([]Routine, error) {
 	args := m.Called(userID)
 	return args.Get(0).([]Routine), args.Error(1)
 }
+func (m *mockRoutineRepo) FindAllPublic() ([]Routine, error) {
+	args := m.Called()
+	return args.Get(0).([]Routine), args.Error(1)
+}
 func (m *mockRoutineRepo) FindByID(id uint) (Routine, error) {
 	args := m.Called(id)
 	return args.Get(0).(Routine), args.Error(1)
@@ -186,6 +190,52 @@ func TestGetRoutines(t *testing.T) {
 
 		svc := NewRoutineService(rr, &mockExerciseRepo{})
 		_, err := svc.GetRoutines(1)
+
+		assert.ErrorIs(t, err, dbErr)
+		rr.AssertExpectations(t)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// GetTemplates
+// ---------------------------------------------------------------------------
+
+func TestGetTemplates(t *testing.T) {
+	t.Run("success returns mapped public list", func(t *testing.T) {
+		rr := &mockRoutineRepo{}
+		rr.On("FindAllPublic").Return([]Routine{
+			{Model: gorm.Model{ID: 1}, Name: "A", IsPublic: true},
+			{Model: gorm.Model{ID: 2}, Name: "B", IsPublic: true},
+		}, nil)
+
+		svc := NewRoutineService(rr, &mockExerciseRepo{})
+		res, err := svc.GetTemplates()
+
+		assert.NoError(t, err)
+		assert.Len(t, res, 2)
+		rr.AssertExpectations(t)
+	})
+
+	t.Run("no templates returns non-nil empty slice", func(t *testing.T) {
+		rr := &mockRoutineRepo{}
+		rr.On("FindAllPublic").Return([]Routine{}, nil)
+
+		svc := NewRoutineService(rr, &mockExerciseRepo{})
+		res, err := svc.GetTemplates()
+
+		assert.NoError(t, err)
+		assert.NotNil(t, res)
+		assert.Empty(t, res)
+		rr.AssertExpectations(t)
+	})
+
+	t.Run("repo error propagates", func(t *testing.T) {
+		rr := &mockRoutineRepo{}
+		dbErr := errors.New("db error")
+		rr.On("FindAllPublic").Return([]Routine{}, dbErr)
+
+		svc := NewRoutineService(rr, &mockExerciseRepo{})
+		_, err := svc.GetTemplates()
 
 		assert.ErrorIs(t, err, dbErr)
 		rr.AssertExpectations(t)

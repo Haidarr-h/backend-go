@@ -553,7 +553,7 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Get routines
+      summary: Get my routines
       tags:
       - routines
     post:
@@ -669,7 +669,7 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Get routine
+      summary: Get my routine by ID
       tags:
       - routines
     patch:
@@ -714,6 +714,35 @@ paths:
       security:
       - BearerAuth: []
       summary: Update routine
+      tags:
+      - routines
+  /api/v1/routines/templates:
+    get:
+      consumes:
+      - application/json
+      description: Get all public routines, usable as templates by any authenticated
+        user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get template routines
       tags:
       - routines
   /api/v1/sessions:

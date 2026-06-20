@@ -433,7 +433,7 @@ const docTemplate = `{
                 "tags": [
                     "routines"
                 ],
-                "summary": "Get routines",
+                "summary": "Get my routines",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -518,6 +518,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/routines/templates": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all public routines, usable as templates by any authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "routines"
+                ],
+                "summary": "Get template routines",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/routines/{id}": {
             "get": {
                 "security": [
@@ -535,7 +578,7 @@ const docTemplate = `{
                 "tags": [
                     "routines"
                 ],
-                "summary": "Get routine",
+                "summary": "Get my routine by ID",
                 "parameters": [
                     {
                         "type": "integer",
