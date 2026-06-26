@@ -11,6 +11,7 @@ import (
 	"github.com/Haidarr-h/backend-go/internal/migrate"
 	"github.com/Haidarr-h/backend-go/internal/routine"
 	"github.com/Haidarr-h/backend-go/internal/session"
+	"github.com/Haidarr-h/backend-go/internal/stats"
 	"github.com/Haidarr-h/backend-go/internal/user"
 	"github.com/Haidarr-h/backend-go/pkg/cache"
 	"github.com/Haidarr-h/backend-go/pkg/logger"
@@ -89,8 +90,13 @@ func main() {
 	sessionService := session.NewSessionService(sessionRepo, routineRepo)
 	sessionHandler := session.NewSessionHandler(sessionService)
 
+	// STATS ROUTE
+	statsRepo := stats.NewStatsRepository(cfg.DB)
+	statsService := stats.NewStatsService(statsRepo)
+	statsHandler := stats.NewStatsHandler(statsService)
+
 	// ORCHESTRATE
-	routes.RegisterRoutes(r, cfg, authHandler, exerciseHandler, routineHandler, userHandler, sessionHandler)
+	routes.RegisterRoutes(r, cfg, authHandler, exerciseHandler, routineHandler, userHandler, sessionHandler, statsHandler)
 
 	migrate.Run(cfg.DB)
 	r.Run(":" + cfg.Port)

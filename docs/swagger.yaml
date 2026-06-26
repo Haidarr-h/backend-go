@@ -953,6 +953,150 @@ paths:
       summary: Update my session by ID
       tags:
       - sessions
+  /api/v1/stats/career:
+    get:
+      description: Lifetime totals (volume, reps, sets, sessions) plus level/XP/progress
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my career stats
+      tags:
+      - stats
+  /api/v1/stats/muscles:
+    get:
+      description: Total volume per primary muscle across all sessions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my muscle volume breakdown
+      tags:
+      - stats
+  /api/v1/stats/records:
+    get:
+      description: Heaviest weight and best single-set volume per exercise
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my personal records
+      tags:
+      - stats
+  /api/v1/stats/streak:
+    get:
+      description: Current and longest streak (up to 2 rest days between workouts
+        keeps it alive)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my workout streak
+      tags:
+      - stats
+  /api/v1/stats/volume:
+    get:
+      description: Volume, reps and session counts bucketed by week (default) or month
+      parameters:
+      - description: Bucket size
+        enum:
+        - week
+        - month
+        in: query
+        name: period
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my volume over time
+      tags:
+      - stats
   /api/v1/users/me:
     delete:
       produces:
