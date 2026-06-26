@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/Haidarr-h/backend-go/internal/auth"
+	"github.com/Haidarr-h/backend-go/internal/bodymetrics"
 	"github.com/Haidarr-h/backend-go/internal/exercise"
 	"github.com/Haidarr-h/backend-go/internal/routine"
 	"github.com/Haidarr-h/backend-go/internal/session"
@@ -27,6 +28,7 @@ func Run(db *gorm.DB) {
 			&session.SessionExerciseSet{},
 			&auth.RefreshToken{},
 			&auth.OtpVerification{},
+			&bodymetrics.BodyMetric{},
 		)
 
 		if err != nil {

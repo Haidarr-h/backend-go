@@ -350,6 +350,112 @@
                 }
             }
         },
+        "/api/v1/body-metrics": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the authenticated user's body metrics (with derived BMI)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "body-metrics"
+                ],
+                "summary": "Get my body metrics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create or overwrite the authenticated user's body metrics. BMI is derived from height and weight.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "body-metrics"
+                ],
+                "summary": "Save my body metrics",
+                "parameters": [
+                    {
+                        "description": "Body metrics",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/bodymetrics.UpsertBodyMetricRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/exercises": {
             "get": {
                 "produces": [
@@ -1629,6 +1735,49 @@
                 "otpCode": {
                     "type": "string",
                     "example": "111111"
+                }
+            }
+        },
+        "bodymetrics.UpsertBodyMetricRequest": {
+            "type": "object",
+            "required": [
+                "age",
+                "gender",
+                "goal",
+                "heightCm",
+                "weightKg"
+            ],
+            "properties": {
+                "age": {
+                    "type": "integer",
+                    "example": 25
+                },
+                "bodyFat": {
+                    "type": "number",
+                    "maximum": 100,
+                    "minimum": 0,
+                    "example": 15
+                },
+                "gender": {
+                    "type": "string",
+                    "enum": [
+                        "male",
+                        "female",
+                        "other"
+                    ],
+                    "example": "male"
+                },
+                "goal": {
+                    "type": "string",
+                    "example": "build_muscle"
+                },
+                "heightCm": {
+                    "type": "number",
+                    "example": 178
+                },
+                "weightKg": {
+                    "type": "number",
+                    "example": 75
                 }
             }
         },

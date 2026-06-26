@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/Haidarr-h/backend-go/internal/auth"
+	"github.com/Haidarr-h/backend-go/internal/bodymetrics"
 	"github.com/Haidarr-h/backend-go/internal/config"
 	"github.com/Haidarr-h/backend-go/internal/exercise"
 	"github.com/Haidarr-h/backend-go/internal/middleware"
@@ -12,7 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(r *gin.Engine, cfg *config.Config, authHandler *auth.AuthHandler, exerciseHandler *exercise.ExerciseHandler, routineHandler *routine.RoutineHandler, userHandler *user.UserHandler, sessionHandler *session.SessionHandler, statsHandler *stats.StatsHandler) {
+func RegisterRoutes(r *gin.Engine, cfg *config.Config, authHandler *auth.AuthHandler, exerciseHandler *exercise.ExerciseHandler, routineHandler *routine.RoutineHandler, userHandler *user.UserHandler, sessionHandler *session.SessionHandler, statsHandler *stats.StatsHandler, bodyMetricHandler *bodymetrics.BodyMetricHandler) {
 	api := r.Group("/api/v1")
 
 	// PUBLIC ROUTES
@@ -27,5 +28,6 @@ func RegisterRoutes(r *gin.Engine, cfg *config.Config, authHandler *auth.AuthHan
 		routineHandler.RegisterRoutes(protected, cfg)
 		sessionHandler.RegisterRoutes(protected, cfg)
 		statsHandler.RegisterRoutes(protected, cfg)
+		bodyMetricHandler.RegisterRoutes(protected, cfg)
 	}
 }

@@ -155,6 +155,39 @@ definitions:
     - email
     - otpCode
     type: object
+  bodymetrics.UpsertBodyMetricRequest:
+    properties:
+      age:
+        example: 25
+        type: integer
+      bodyFat:
+        example: 15
+        maximum: 100
+        minimum: 0
+        type: number
+      gender:
+        enum:
+        - male
+        - female
+        - other
+        example: male
+        type: string
+      goal:
+        example: build_muscle
+        type: string
+      heightCm:
+        example: 178
+        type: number
+      weightKg:
+        example: 75
+        type: number
+    required:
+    - age
+    - gender
+    - goal
+    - heightCm
+    - weightKg
+    type: object
   routine.CreateRoutineRequest:
     properties:
       description:
@@ -486,6 +519,77 @@ paths:
       summary: Verify OTP
       tags:
       - auth
+  /api/v1/body-metrics:
+    get:
+      description: Get the authenticated user's body metrics (with derived BMI)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my body metrics
+      tags:
+      - body-metrics
+    post:
+      consumes:
+      - application/json
+      description: Create or overwrite the authenticated user's body metrics. BMI
+        is derived from height and weight.
+      parameters:
+      - description: Body metrics
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/bodymetrics.UpsertBodyMetricRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Save my body metrics
+      tags:
+      - body-metrics
   /api/v1/exercises:
     get:
       produces:

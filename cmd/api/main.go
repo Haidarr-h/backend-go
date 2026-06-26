@@ -5,6 +5,7 @@ import (
 
 	_ "github.com/Haidarr-h/backend-go/docs"
 	"github.com/Haidarr-h/backend-go/internal/auth"
+	"github.com/Haidarr-h/backend-go/internal/bodymetrics"
 	"github.com/Haidarr-h/backend-go/internal/config"
 	"github.com/Haidarr-h/backend-go/internal/exercise"
 	"github.com/Haidarr-h/backend-go/internal/health"
@@ -95,8 +96,13 @@ func main() {
 	statsService := stats.NewStatsService(statsRepo)
 	statsHandler := stats.NewStatsHandler(statsService)
 
+	// BODY METRICS ROUTE
+	bodyMetricRepo := bodymetrics.NewBodyMetricRepository(cfg.DB)
+	bodyMetricService := bodymetrics.NewBodyMetricService(bodyMetricRepo)
+	bodyMetricHandler := bodymetrics.NewBodyMetricHandler(bodyMetricService)
+
 	// ORCHESTRATE
-	routes.RegisterRoutes(r, cfg, authHandler, exerciseHandler, routineHandler, userHandler, sessionHandler, statsHandler)
+	routes.RegisterRoutes(r, cfg, authHandler, exerciseHandler, routineHandler, userHandler, sessionHandler, statsHandler, bodyMetricHandler)
 
 	migrate.Run(cfg.DB)
 	r.Run(":" + cfg.Port)
